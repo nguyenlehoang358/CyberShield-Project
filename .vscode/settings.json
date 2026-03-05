@@ -1,0 +1,6 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "livePreview.defaultPreviewPath": "/src/main/resources/static/dashboard.html",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "git.ignoreLimitWarning": true
+}
