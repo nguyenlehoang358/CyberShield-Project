@@ -58,4 +58,15 @@ public interface SecurityEventRepository extends JpaRepository<SecurityEvent, Lo
     // Critical unresolved events
     @Query("SELECT e FROM SecurityEvent e WHERE e.resolved = false AND e.severity IN ('HIGH', 'CRITICAL') ORDER BY e.createdAt DESC")
     List<SecurityEvent> findCriticalUnresolved();
+
+    // ═══ ALL-TIME queries (no time filter) for Dashboard display ═══
+
+    @Query("SELECT e.severity, COUNT(e) FROM SecurityEvent e GROUP BY e.severity")
+    List<Object[]> countBySeverityAllTime();
+
+    @Query("SELECT e.eventType, COUNT(e) FROM SecurityEvent e GROUP BY e.eventType ORDER BY COUNT(e) DESC")
+    List<Object[]> countByEventTypeAllTime();
+
+    @Query("SELECT e.sourceIp, COUNT(e) as cnt FROM SecurityEvent e WHERE e.sourceIp IS NOT NULL GROUP BY e.sourceIp ORDER BY cnt DESC")
+    List<Object[]> topAttackingIPsAllTime(Pageable pageable);
 }

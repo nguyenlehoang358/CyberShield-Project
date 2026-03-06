@@ -136,6 +136,7 @@ public class SecurityEventService {
 
     /**
      * Get comprehensive security statistics for the dashboard.
+     * Uses ALL-TIME data from PostgreSQL (no time filtering for display).
      */
     public Map<String, Object> getDashboardStats() {
         // Check cache first
@@ -144,34 +145,32 @@ public class SecurityEventService {
         }
 
         Map<String, Object> stats = new LinkedHashMap<>();
-        Instant last24h = Instant.now().minus(24, ChronoUnit.HOURS);
-        Instant last1h = Instant.now().minus(1, ChronoUnit.HOURS);
-        Instant last7d = Instant.now().minus(7, ChronoUnit.DAYS);
 
-        // Counts
-        stats.put("totalEvents", repository.count());
+        // Total counts (all-time)
+        long totalEvents = repository.count();
+        stats.put("totalEvents", totalEvents);
         stats.put("unresolvedCount", repository.countByResolvedFalse());
         stats.put("criticalCount", repository.countBySeverity(Severity.CRITICAL));
         stats.put("highCount", repository.countBySeverity(Severity.HIGH));
 
-        // Severity distribution (24h)
-        List<Object[]> severityCounts = repository.countBySeveritySince(last24h);
+        // Severity distribution (ALL-TIME)
+        List<Object[]> severityCounts = repository.countBySeverityAllTime();
         Map<String, Long> severityMap = new LinkedHashMap<>();
         for (Object[] row : severityCounts) {
             severityMap.put(row[0].toString(), (Long) row[1]);
         }
-        stats.put("severity24h", severityMap);
+        stats.put("severityDistribution", severityMap);
 
-        // Event type distribution (24h)
-        List<Object[]> typeCounts = repository.countByEventTypeSince(last24h);
+        // Event type distribution (ALL-TIME)
+        List<Object[]> typeCounts = repository.countByEventTypeAllTime();
         Map<String, Long> typeMap = new LinkedHashMap<>();
         for (Object[] row : typeCounts) {
             typeMap.put((String) row[0], (Long) row[1]);
         }
-        stats.put("eventTypes24h", typeMap);
+        stats.put("eventTypes", typeMap);
 
-        // Top attacking IPs (7 days)
-        List<Object[]> topIPs = repository.topAttackingIPs(last7d, PageRequest.of(0, 10));
+        // Top attacking IPs (ALL-TIME)
+        List<Object[]> topIPs = repository.topAttackingIPsAllTime(PageRequest.of(0, 10));
         List<Map<String, Object>> ipList = topIPs.stream().map(row -> {
             Map<String, Object> ip = new LinkedHashMap<>();
             ip.put("ip", row[0]);
@@ -180,13 +179,13 @@ public class SecurityEventService {
         }).collect(Collectors.toList());
         stats.put("topAttackingIPs", ipList);
 
-        // Events last hour + 24h (use count query instead of loading all entities)
+        // Keep 1h events for real-time risk score
+        Instant last1h = Instant.now().minus(1, ChronoUnit.HOURS);
         long eventsLastHour = repository.findByCreatedAtAfterOrderByCreatedAtDesc(last1h).size();
-        long events24h = repository.findByCreatedAtAfterOrderByCreatedAtDesc(last24h).size();
         stats.put("eventsLastHour", eventsLastHour);
-        stats.put("events24h", events24h);
+        stats.put("events24h", totalEvents); // now shows all events
 
-        // Risk score (computed)
+        // Risk score (computed from all-time severity + recent frequency)
         stats.put("riskScore", calculateRiskScore(severityMap, eventsLastHour));
 
         // Cache the result

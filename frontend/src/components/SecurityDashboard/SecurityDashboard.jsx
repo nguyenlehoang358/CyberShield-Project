@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useLanguage } from '../../context/LanguageContext'
 import { useAuth } from '../../context/AuthContext'
 import './SecurityDashboard.css'
@@ -116,7 +116,7 @@ export default function SecurityDashboard() {
     const [socLoading, setSocLoading] = useState(false)
     const socEndRef = useRef(null)
 
-    const fetchStats = useCallback(async () => {
+    const fetchStats = async () => {
         try {
             const res = await api.get(`${ADMIN_SECURITY_PATH}/stats`)
             setStats(res.data)
@@ -124,9 +124,9 @@ export default function SecurityDashboard() {
             console.error('Stats error:', e.response?.data || e.message)
             throw e
         }
-    }, [api])
+    }
 
-    const fetchBlockedIPs = useCallback(async (page = 0) => {
+    const fetchBlockedIPs = async (page = 0) => {
         try {
             const res = await api.get(`${ADMIN_SECURITY_PATH}/blocked-ips?page=${page}&size=15`)
             setBlockedIPs(res.data)
@@ -134,9 +134,9 @@ export default function SecurityDashboard() {
             console.error('Blocked IPs error:', e.response?.data || e.message)
             throw e
         }
-    }, [api])
+    }
 
-    const fetchLoginAttempts = useCallback(async (page = 0) => {
+    const fetchLoginAttempts = async (page = 0) => {
         try {
             const url = searchQuery
                 ? `${ADMIN_SECURITY_PATH}/login-attempts/search?q=${encodeURIComponent(searchQuery)}&page=${page}&size=15`
@@ -147,27 +147,34 @@ export default function SecurityDashboard() {
             console.error('Login attempts error:', e.response?.data || e.message)
             throw e
         }
-    }, [api, searchQuery])
+    }
 
-    const refreshAll = useCallback(async () => {
+    const refreshAll = async () => {
         setLoading(true)
         setFetchError(null)
         try {
-            await Promise.all([fetchStats(), fetchBlockedIPs(blockedIPs.currentPage || 0), fetchLoginAttempts(loginAttempts.currentPage || 0)])
+            await Promise.all([fetchStats(), fetchBlockedIPs(), fetchLoginAttempts()])
         } catch (e) {
             setFetchError(e.message)
         } finally {
             setLoading(false)
         }
-    }, [fetchStats, fetchBlockedIPs, fetchLoginAttempts])
+    }
 
-    useEffect(() => { refreshAll() }, [refreshAll])
-
-    // Auto-refresh every 5s for near real-time updates
+    // Initial load (once on mount)
     useEffect(() => {
-        const interval = setInterval(refreshAll, 5000)
+        refreshAll()
+    }, [])
+
+    // Stable polling interval — 30s
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchStats().catch(() => { })
+            fetchBlockedIPs().catch(() => { })
+            fetchLoginAttempts().catch(() => { })
+        }, 30000)
         return () => clearInterval(interval)
-    }, [refreshAll])
+    }, [])
 
     const handleUnblock = async (ip) => {
         if (!window.confirm(`Unblock IP: ${ip}?`)) return

@@ -2,9 +2,9 @@ spring:
   application:
     name: myweb
   datasource:
-    url: jdbc:postgresql://localhost:5432/springboot_db?options=-c%20TimeZone=UTC
-    username: ${DB_USERNAME:admin}
-    password: ${DB_PASSWORD:admin123}
+    url: jdbc:postgresql://ep-spring-pond-a1d5obpb-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+    username: neondb_owner
+    password: npg_RU5EKVvAhqY3
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -55,15 +55,15 @@ spring:
         registration:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: email,profile
           facebook:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_ID}
+            client-id: ${FACEBOOK_CLIENT_ID}
+            client-secret: ${FACEBOOK_CLIENT_SECRET}
             scope: email,public_profile
           github:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_ID}
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
             scope: user:email
           linkedin:
             client-id: ${LINKEDIN_CLIENT_ID:YOUR_LINKEDIN_CLIENT_ID}
@@ -114,11 +114,11 @@ app:
   ai:
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
-      model: ${OLLAMA_MODEL:qwen2.5:0.5b}
+      model: ${OLLAMA_MODEL:qwen2.5:3b}
       embedding-model: ${OLLAMA_EMBEDDING_MODEL:all-minilm}
       timeout-seconds: 120
       temperature: 0.7
-      max-tokens: 2048
+      max-tokens: 4096
     # System prompt for the LAB AI Assistant (RAG-enhanced)
     system-prompt: |
       Bạn là CyberShield Security Assistant (Trợ lý AI Bảo Mật Mạng). Nhiệm vụ:

@@ -270,8 +270,8 @@ export default function SecurityAdvisor() {
                             <h4>{t.severityDist}</h4>
                             <div className="sa-severity-bars">
                                 {['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map(sev => {
-                                    const count = stats?.severity24h?.[sev] || 0
-                                    const total = Object.values(stats?.severity24h || {}).reduce((a, b) => a + b, 0) || 1
+                                    const count = stats?.severityDistribution?.[sev] || 0
+                                    const total = Object.values(stats?.severityDistribution || {}).reduce((a, b) => a + b, 0) || 1
                                     const pct = Math.round((count / total) * 100)
                                     const cfg = severityConfig[sev]
                                     return (
@@ -307,11 +307,11 @@ export default function SecurityAdvisor() {
                     </div>
 
                     {/* Event Types */}
-                    {stats?.eventTypes24h && Object.keys(stats.eventTypes24h).length > 0 && (
+                    {stats?.eventTypes && Object.keys(stats.eventTypes).length > 0 && (
                         <div className="sa-analytics-card sa-full-width">
                             <h4>{t.eventTypeDist}</h4>
                             <div className="sa-event-type-grid">
-                                {Object.entries(stats.eventTypes24h).map(([type, count]) => (
+                                {Object.entries(stats.eventTypes).map(([type, count]) => (
                                     <div key={type} className="sa-event-type-chip">
                                         <span className="sa-event-type-name">{type}</span>
                                         <span className="sa-event-type-count">{count}</span>

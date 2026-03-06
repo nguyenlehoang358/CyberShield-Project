@@ -75,27 +75,27 @@ public class LoginAttemptService {
 
     /**
      * Get security statistics for admin dashboard.
+     * Uses ALL-TIME data from PostgreSQL (no time filtering).
      */
     public Map<String, Object> getSecurityStats() {
-        Instant last24h = Instant.now().minus(24, ChronoUnit.HOURS);
-        Instant last1h = Instant.now().minus(1, ChronoUnit.HOURS);
-        Instant last7d = Instant.now().minus(7, ChronoUnit.DAYS);
-
         Map<String, Object> stats = new LinkedHashMap<>();
 
-        // Last 24 hours
+        // Total counts (all-time from PostgreSQL)
+        long totalFailures = repository.countTotalFailuresAllTime();
+        long totalSuccesses = repository.countTotalSuccessesAllTime();
+        stats.put("totalFailures", totalFailures);
+        stats.put("totalSuccesses", totalSuccesses);
+        stats.put("totalAttempts", totalFailures + totalSuccesses);
+
+        // Keep 24h/1h stats for real-time alert indicators (kept for backward compat)
+        Instant last24h = Instant.now().minus(24, ChronoUnit.HOURS);
+        Instant last1h = Instant.now().minus(1, ChronoUnit.HOURS);
         stats.put("failures24h", repository.countTotalFailuresSince(last24h));
         stats.put("successes24h", repository.countTotalSuccessesSince(last24h));
-
-        // Last 1 hour (for real-time alert)
         stats.put("failures1h", repository.countTotalFailuresSince(last1h));
 
-        // Last 7 days
-        stats.put("failures7d", repository.countTotalFailuresSince(last7d));
-        stats.put("successes7d", repository.countTotalSuccessesSince(last7d));
-
-        // Top attacking IPs (last 24h)
-        List<Object[]> topIPs = repository.findTopAttackingIPs(last24h, PageRequest.of(0, 10));
+        // Top attacking IPs (ALL-TIME)
+        List<Object[]> topIPs = repository.findTopAttackingIPsAllTime(PageRequest.of(0, 10));
         stats.put("topAttackingIPs", topIPs.stream().map(row -> {
             Map<String, Object> entry = new HashMap<>();
             entry.put("ip", row[0]);
@@ -103,8 +103,8 @@ public class LoginAttemptService {
             return entry;
         }).collect(Collectors.toList()));
 
-        // Top targeted users (last 24h)
-        List<Object[]> topUsers = repository.findTopTargetedUsers(last24h, PageRequest.of(0, 10));
+        // Top targeted users (ALL-TIME)
+        List<Object[]> topUsers = repository.findTopTargetedUsersAllTime(PageRequest.of(0, 10));
         stats.put("topTargetedUsers", topUsers.stream().map(row -> {
             Map<String, Object> entry = new HashMap<>();
             entry.put("username", row[0]);

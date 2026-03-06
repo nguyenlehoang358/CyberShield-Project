@@ -1,7 +1,5 @@
 package com.myweb.service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,7 +131,6 @@ public class SocAiChatService {
      */
     private String buildSecurityContext() {
         StringBuilder ctx = new StringBuilder();
-        Instant last24h = Instant.now().minus(24, ChronoUnit.HOURS);
 
         // Recent login attempts (last 50)
         List<LoginAttempt> recentAttempts = loginAttemptRepo
@@ -161,9 +158,9 @@ public class SocAiChatService {
             ctx.append("\n");
         }
 
-        // Top attacking IPs
-        List<Object[]> topIPs = loginAttemptRepo.findTopAttackingIPs(last24h, PageRequest.of(0, 10));
-        ctx.append("=== TOP IP TẤN CÔNG (24h) ===\n");
+        // Top attacking IPs (ALL-TIME)
+        List<Object[]> topIPs = loginAttemptRepo.findTopAttackingIPsAllTime(PageRequest.of(0, 10));
+        ctx.append("=== TOP IP TẤN CÔNG (TOÀN BỘ) ===\n");
         if (topIPs.isEmpty()) {
             ctx.append("Không có IP tấn công.\n\n");
         } else {
@@ -189,10 +186,11 @@ public class SocAiChatService {
             ctx.append("\n");
         }
 
-        // Aggregated stats
-        long failures24h = loginAttemptRepo.countTotalFailuresSince(last24h);
-        long successes24h = loginAttemptRepo.countTotalSuccessesSince(last24h);
-        ctx.append(String.format("=== THỐNG KÊ 24H ===\nThất bại: %d | Thành công: %d\n\n", failures24h, successes24h));
+        // Aggregated stats (ALL-TIME)
+        long totalFailures = loginAttemptRepo.countTotalFailuresAllTime();
+        long totalSuccesses = loginAttemptRepo.countTotalSuccessesAllTime();
+        ctx.append(String.format("=== THỐNG KÊ TỔNG ===\nThất bại: %d | Thành công: %d\n\n", totalFailures,
+                totalSuccesses));
 
         return ctx.toString();
     }

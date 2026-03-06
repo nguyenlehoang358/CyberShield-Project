@@ -293,6 +293,24 @@
     padding-top: 20px;
 }
 
+/* Chart fade-in animation for bar/pie toggle */
+@keyframes chartFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.admin-chart-card:hover {
+    border-color: rgba(88, 166, 255, 0.2);
+    box-shadow: 0 4px 24px rgba(88, 166, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
 .chart-bar-group {
     display: flex;
     flex-direction: column;
@@ -479,7 +497,7 @@
 /* Responsive */
 @media (max-width: 1024px) {
     .admin-stats-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr !important;
     }
     .admin-chart-grid {
         grid-template-columns: 1fr;
@@ -497,5 +515,5 @@
     .admin-main { margin-left: 72px; }
     .admin-header { padding: 1rem; }
     .admin-content { padding: 1rem; }
-    .admin-stats-grid { grid-template-columns: 1fr; }
+    .admin-stats-grid { grid-template-columns: 1fr !important; }
 }

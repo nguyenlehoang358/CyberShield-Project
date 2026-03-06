@@ -2,6 +2,8 @@ package com.myweb.entity;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -25,6 +27,7 @@ public class AuditLog {
     @Column(columnDefinition = "TEXT")
     private String details;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     private Instant timestamp = Instant.now();
 
     @Enumerated(EnumType.STRING)

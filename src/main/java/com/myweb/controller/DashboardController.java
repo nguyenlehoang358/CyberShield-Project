@@ -55,30 +55,64 @@ public class DashboardController {
                                                         "description", getTableDescription(tableName));
                                 });
 
-                // Specific aggregated charts
-                long contactCount = contactMessageRepository.count();
-                long unreadContactCount = contactMessageRepository
-                                .countByStatus(com.myweb.entity.ContactMessage.Status.UNREAD);
-                long blogCount = blogPostRepository.count();
-                long publishedBlogCount = blogPostRepository.countByPublishedTrue();
-                long auditCount = auditLogRepository.count();
-                long defectCount = auditLogRepository.countBySeverity(com.myweb.entity.AuditLog.Severity.DANGER);
+                // Specific aggregated charts — each wrapped separately so one failure
+                // doesn't kill all charts. Using HashMap to tolerate potential null values.
+                java.util.Map<String, Object> charts = new java.util.HashMap<>();
+                try {
+                        long contactCount2 = contactMessageRepository.count();
+                        long unreadCount = contactMessageRepository
+                                        .countByStatus(com.myweb.entity.ContactMessage.Status.UNREAD);
+                        java.util.Map<String, Object> contactChart = new java.util.HashMap<>();
+                        contactChart.put("total", contactCount2);
+                        contactChart.put("unread", unreadCount);
+                        contactChart.put("read", contactCount2 - unreadCount);
+                        charts.put("contacts", contactChart);
+                } catch (Exception e) {
+                        charts.put("contacts", java.util.Map.of("total", 0L, "unread", 0L, "read", 0L));
+                }
+                try {
+                        long blogTotal = blogPostRepository.count();
+                        long publishedCount = blogPostRepository.countByPublishedTrue();
+                        java.util.Map<String, Object> blogChart = new java.util.HashMap<>();
+                        blogChart.put("total", blogTotal);
+                        blogChart.put("published", publishedCount);
+                        blogChart.put("draft", blogTotal - publishedCount);
+                        charts.put("blogs", blogChart);
+                } catch (Exception e) {
+                        charts.put("blogs", java.util.Map.of("total", 0L, "published", 0L, "draft", 0L));
+                }
+                try {
+                        long auditTotal = auditLogRepository.count();
+                        long dangerCount = auditLogRepository
+                                        .countBySeverity(com.myweb.entity.AuditLog.Severity.DANGER);
+                        java.util.Map<String, Object> securityChart = new java.util.HashMap<>();
+                        securityChart.put("total", auditTotal);
+                        securityChart.put("danger", dangerCount);
+                        securityChart.put("safe", auditTotal - dangerCount);
+                        charts.put("security", securityChart);
+                } catch (Exception e) {
+                        charts.put("security", java.util.Map.of("total", 0L, "danger", 0L, "safe", 0L));
+                }
 
-                Map<String, Object> charts = Map.of(
-                                "contacts",
-                                Map.of("total", contactCount, "unread", unreadContactCount, "read",
-                                                contactCount - unreadContactCount),
-                                "blogs",
-                                Map.of("total", blogCount, "published", publishedBlogCount, "draft",
-                                                blogCount - publishedBlogCount),
-                                "security",
-                                Map.of("total", auditCount, "danger", defectCount, "safe", auditCount - defectCount));
+                // Recent audit logs (10 most recent) — wrapped in try-catch
+                // so chart/stats data still returns even if audit query fails
+                List<?> recentLogs;
+                try {
+                        recentLogs = auditLogRepository.findTop20ByOrderByTimestampDesc()
+                                        .stream().limit(10).toList();
+                } catch (Exception e) {
+                        recentLogs = List.of();
+                }
 
-                return ResponseEntity.ok(Map.of(
-                                "userCount", userRepository.count(),
-                                "tables", tables,
-                                "charts", charts,
-                                "recentLogs", java.util.List.of()));
+                // Use HashMap (tolerates null values, unlike Map.of)
+                java.util.Map<String, Object> response = new java.util.HashMap<>();
+                response.put("userCount", userRepository.count());
+                response.put("contactCount", contactMessageRepository.count());
+                response.put("tables", tables);
+                response.put("charts", charts);
+                response.put("recentLogs", recentLogs);
+
+                return ResponseEntity.ok(response);
         }
 
         private String getTableDescription(String tableName) {

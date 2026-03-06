@@ -2,6 +2,7 @@ package com.myweb.dto;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
@@ -14,7 +15,7 @@ public record ApiErrorResponse(
         String error,
         String message,
         String path,
-        Instant timestamp) {
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh") Instant timestamp) {
     public ApiErrorResponse(int status, String error, String message, String path) {
         this(status, error, message, path, Instant.now());
     }

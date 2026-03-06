@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import SolutionManager from './Admin/SolutionManager'
 import SimpleBarChart from '../components/Admin/SimpleBarChart'
+import SimplePieChart from '../components/Admin/SimplePieChart'
 import SecurityDashboard from '../components/SecurityDashboard/SecurityDashboard'
 import SecurityAdvisor from '../components/SecurityAdvisor/SecurityAdvisor'
 import ErrorBoundary from '../components/ErrorBoundary/ErrorBoundary'
@@ -24,14 +25,22 @@ export default function AdminDashboard() {
     const [users, setUsers] = useState([])
     const [loadingData, setLoadingData] = useState(false)
 
+    // Chart type toggle
+    const [chartType, setChartType] = useState('bar')
+
     // Database PIN lock
     const [dbUnlocked, setDbUnlocked] = useState(false)
     const [dbPin, setDbPin] = useState('')
     const [dbPinError, setDbPinError] = useState('')
 
+    // Initial data load (runs once on mount)
     useEffect(() => {
         loadStats()
-        // Thiết lập tự động cập nhật (Polling) mỗi 5 giây cho tính năng Real-time
+        loadUsers()
+    }, [])
+
+    // Polling interval — runs only when on relevant sections, 30s to reduce load
+    useEffect(() => {
         const interval = setInterval(() => {
             if (activeSection === 'overview' || activeSection === 'database') {
                 loadStats()
@@ -39,17 +48,22 @@ export default function AdminDashboard() {
             if (activeSection === 'users' || activeSection === 'database') {
                 loadUsers()
             }
-        }, 5000)
-
+        }, 30000)
         return () => clearInterval(interval)
     }, [activeSection])
 
     const loadStats = async () => {
         try {
             const res = await api.get('/dashboard/stats')
-            setStats(res.data)
+            if (res.data) {
+                console.log('[Dashboard] API response:', JSON.stringify(res.data.charts))
+                console.log('[Dashboard] contacts:', res.data.charts?.contacts)
+                console.log('[Dashboard] blogs:', res.data.charts?.blogs)
+                console.log('[Dashboard] security:', res.data.charts?.security)
+                setStats(prev => ({ ...prev, ...res.data }))
+            }
         } catch (err) {
-            console.error('Failed to load stats:', err)
+            console.error('Failed to load stats:', err?.response?.status, err?.message)
         }
     }
 
@@ -165,10 +179,10 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="admin-header-actions">
-                        <button onClick={toggleLang} className="admin-lang-toggle">
+                        <button onClick={toggleLang} className="admin-lang-toggle" style={{ fontWeight: 'bold' }}>
                             {lang === 'vi' ? 'VI / EN' : 'EN / VI'}
                         </button>
-                        <span className="admin-user-info">
+                        <span className="admin-user-info" style={{ fontWeight: 'bold' }}>
                             <i className='bx bx-user-circle'></i> {user?.username}
                         </span>
                     </div>
@@ -179,7 +193,7 @@ export default function AdminDashboard() {
                     {activeSection === 'overview' && (
                         <section className="admin-section">
                             {/* Key Metrics */}
-                            <div className="admin-stats-grid">
+                            <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', width: '100%' }}>
                                 <div className="admin-stat-card">
                                     <i className='bx bx-user admin-stat-icon'></i>
                                     <div>
@@ -204,50 +218,104 @@ export default function AdminDashboard() {
                                 <div className="admin-stat-card">
                                     <i className='bx bx-server admin-stat-icon'></i>
                                     <div>
-                                        <span className="admin-stat-value">Active</span>
+                                        <span className="admin-stat-value" style={{ color: '#22c55e' }}>Active</span>
                                         <span className="admin-stat-label">System Status</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Charts Section */}
-                            <h3 style={{ marginBottom: '1.5rem', marginTop: '3rem', color: 'var(--text-primary)' }}>
-                                {lang === 'vi' ? 'Thống kê dữ liệu' : 'Data Analytics'}
-                            </h3>
-                            <div className="admin-chart-grid">
-                                {stats.charts?.contacts && (
-                                    <SimpleBarChart
-                                        title={lang === 'vi' ? 'Liên hệ khách hàng' : 'Contact Messages'}
-                                        data={[
-                                            { label: 'Unread', value: stats.charts.contacts.unread, color: 'var(--lab-red)' },
-                                            { label: 'Read', value: stats.charts.contacts.read, color: 'var(--lab-green)' },
-                                            { label: 'Total', value: stats.charts.contacts.total, color: 'var(--lab-blue)' }
-                                        ]}
-                                    />
-                                )}
-                                {stats.charts?.blogs && (
-                                    <SimpleBarChart
-                                        title={lang === 'vi' ? 'Bài viết & Tin tức' : 'Blogs & News'}
-                                        data={[
-                                            { label: 'Published', value: stats.charts.blogs.published, color: 'var(--lab-green)' },
-                                            { label: 'Drafts', value: stats.charts.blogs.draft, color: 'var(--lab-yellow)' },
-                                            { label: 'Total', value: stats.charts.blogs.total, color: 'var(--lab-blue)' }
-                                        ]}
-                                    />
-                                )}
-                                {stats.charts?.security && (
-                                    <SimpleBarChart
-                                        title={lang === 'vi' ? 'Trạng thái bảo mật' : 'Security Status'}
-                                        data={[
-                                            { label: 'Danger', value: stats.charts.security.danger, color: 'var(--lab-red)' },
-                                            { label: 'Safe Ops', value: stats.charts.security.safe, color: 'var(--lab-green)' }
-                                        ]}
-                                    />
-                                )}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '3rem', marginBottom: '1.5rem' }}>
+                                <h3 style={{ color: '#ffffff', fontWeight: 600, margin: 0 }}>
+                                    {lang === 'vi' ? 'Thống kê dữ liệu' : 'Data Analytics'}
+                                </h3>
+                                <button
+                                    onClick={() => setChartType(prev => prev === 'bar' ? 'pie' : 'bar')}
+                                    style={{
+                                        background: 'rgba(88,166,255,0.12)',
+                                        border: '1px solid rgba(88,166,255,0.3)',
+                                        color: '#58a6ff',
+                                        padding: '0.4rem 1rem',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {chartType === 'bar' ? '🥧' : '📊'}
+                                    {lang === 'vi'
+                                        ? `Chuyển biểu đồ (${chartType === 'bar' ? 'Tròn' : 'Cột'})`
+                                        : `Switch to ${chartType === 'bar' ? 'Pie' : 'Bar'}`
+                                    }
+                                </button>
+                            </div>
+                            <div
+                                key={chartType}
+                                style={{
+                                    animation: 'chartFadeIn 0.4s ease-out forwards'
+                                }}
+                            >
+                                <div className="admin-chart-grid">
+                                    {chartType === 'bar' ? (
+                                        <>
+                                            <SimpleBarChart
+                                                title={lang === 'vi' ? 'Liên hệ khách hàng' : 'Contact Messages'}
+                                                data={[
+                                                    { label: 'Unread', value: stats.charts?.contacts?.unread ?? 0, color: '#ef4444' },
+                                                    { label: 'Read', value: stats.charts?.contacts?.read ?? 0, color: '#22c55e' },
+                                                    { label: 'Total', value: stats.charts?.contacts?.total ?? 0, color: '#3b82f6' }
+                                                ]}
+                                            />
+                                            <SimpleBarChart
+                                                title={lang === 'vi' ? 'Bài viết & Tin tức' : 'Blogs & News'}
+                                                data={[
+                                                    { label: 'Published', value: stats.charts?.blogs?.published ?? 0, color: '#22c55e' },
+                                                    { label: 'Drafts', value: stats.charts?.blogs?.draft ?? 0, color: '#f59e0b' },
+                                                    { label: 'Total', value: stats.charts?.blogs?.total ?? 0, color: '#3b82f6' }
+                                                ]}
+                                            />
+                                            <SimpleBarChart
+                                                title={lang === 'vi' ? 'Trạng thái bảo mật' : 'Security Status'}
+                                                data={[
+                                                    { label: 'Danger', value: stats.charts?.security?.danger ?? 0, color: '#ef4444' },
+                                                    { label: 'Safe Ops', value: stats.charts?.security?.safe ?? 0, color: '#22c55e' }
+                                                ]}
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <SimplePieChart
+                                                title={lang === 'vi' ? 'Liên hệ khách hàng' : 'Contact Messages'}
+                                                data={[
+                                                    { label: 'Unread', value: stats.charts?.contacts?.unread ?? 0, color: '#ef4444' },
+                                                    { label: 'Read', value: stats.charts?.contacts?.read ?? 0, color: '#22c55e' }
+                                                ]}
+                                            />
+                                            <SimplePieChart
+                                                title={lang === 'vi' ? 'Bài viết & Tin tức' : 'Blogs & News'}
+                                                data={[
+                                                    { label: 'Published', value: stats.charts?.blogs?.published ?? 0, color: '#22c55e' },
+                                                    { label: 'Drafts', value: stats.charts?.blogs?.draft ?? 0, color: '#f59e0b' }
+                                                ]}
+                                            />
+                                            <SimplePieChart
+                                                title={lang === 'vi' ? 'Trạng thái bảo mật' : 'Security Status'}
+                                                data={[
+                                                    { label: 'Danger', value: stats.charts?.security?.danger ?? 0, color: '#ef4444' },
+                                                    { label: 'Safe Ops', value: stats.charts?.security?.safe ?? 0, color: '#22c55e' }
+                                                ]}
+                                            />
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Security Logs Table */}
-                            <h3 style={{ marginBottom: '1.5rem', marginTop: '2rem', color: 'var(--text-primary)' }}>
+                            <h3 style={{ marginBottom: '1.5rem', marginTop: '2rem', color: '#ffffff', fontWeight: 600 }}>
                                 {lang === 'vi' ? 'Nhật ký bảo mật gần đây' : 'Recent Security Logs'}
                             </h3>
                             <div className="admin-table-wrapper">
