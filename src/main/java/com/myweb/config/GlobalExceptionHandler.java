@@ -36,11 +36,22 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private final AuditLogRepository auditLogRepository;
     private final SecurityEventService securityEventService;
+    private final com.myweb.service.SystemSettingService systemSettingService;
 
     public GlobalExceptionHandler(AuditLogRepository auditLogRepository,
-            SecurityEventService securityEventService) {
+            SecurityEventService securityEventService,
+            com.myweb.service.SystemSettingService systemSettingService) {
         this.auditLogRepository = auditLogRepository;
         this.securityEventService = securityEventService;
+        this.systemSettingService = systemSettingService;
+    }
+
+    private void saveAuditLog(AuditLog log) {
+        String level = systemSettingService.getSettingValue("general.log_level", "ALL");
+        if ("DANGER_ONLY".equals(level) && log.getSeverity() != AuditLog.Severity.DANGER) {
+            return;
+        }
+        auditLogRepository.save(log);
     }
 
     // ── Authentication / Authorization ──────────────────────────────────────────
@@ -51,7 +62,7 @@ public class GlobalExceptionHandler {
         String ip = getClientIp(request);
         log.warn("Bad credentials attempt from IP: {}", ip);
 
-        auditLogRepository.save(new AuditLog(
+        saveAuditLog(new AuditLog(
                 "LOGIN_FAILED",
                 "unknown",
                 ip,
@@ -74,7 +85,7 @@ public class GlobalExceptionHandler {
         String ip = getClientIp(request);
         log.warn("Access denied for IP: {} on path: {}", ip, request.getRequestURI());
 
-        auditLogRepository.save(new AuditLog(
+        saveAuditLog(new AuditLog(
                 "ACCESS_DENIED",
                 request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "anonymous",
                 ip,
@@ -142,6 +153,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntime(RuntimeException ex, HttpServletRequest request) {
         log.error("Unhandled runtime exception on {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        try {
+            java.nio.file.Files.writeString(java.nio.file.Path.of("error.log"), ex.toString() + "\n" + java.util.Arrays.toString(ex.getStackTrace()));
+        } catch (Exception e) {}
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
                 "An unexpected error occurred. Please try again later.", request);
     }

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useLanguage } from '../../context/LanguageContext'
 import './AIChatWidget.css'
 
@@ -123,8 +124,12 @@ function renderMarkdown(text) {
 }
 
 export default function AIChatWidget() {
-    const { language } = useLanguage()
+    const location = useLocation()
+    const { lang: language } = useLanguage()
     const t = translations[language] || translations.vi
+
+    const currentIP = window.location.hostname
+    const apiBase = (currentIP === 'localhost' || currentIP === '127.0.0.1') ? '' : `https://${currentIP}:8443`
 
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState([
@@ -136,6 +141,10 @@ export default function AIChatWidget() {
     const [docCount, setDocCount] = useState(0)
     const messagesEndRef = useRef(null)
     const inputRef = useRef(null)
+
+    if (!location.pathname.startsWith('/lab')) {
+        return null; // hide on non-lab pages
+    }
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -153,7 +162,7 @@ export default function AIChatWidget() {
 
     const checkHealth = async () => {
         try {
-            const res = await fetch('https://localhost:8443/api/ai/status')
+            const res = await fetch(`${apiBase}/api/ai/status`)
             if (res.ok) {
                 const data = await res.json()
                 setIsOnline(data.status === 'OK')
@@ -164,7 +173,7 @@ export default function AIChatWidget() {
         } catch {
             // Fallback to system-health endpoint
             try {
-                const res = await fetch('https://localhost:8443/api/public/system-health')
+                const res = await fetch(`${apiBase}/api/public/system-health`)
                 const data = await res.json()
                 setIsOnline(data.ollama?.status === 'UP')
             } catch {
@@ -184,7 +193,7 @@ export default function AIChatWidget() {
 
         try {
             const token = localStorage.getItem('token')
-            const res = await fetch('https://localhost:8443/api/ai/chat', {
+            const res = await fetch(`${apiBase}/api/ai/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -247,7 +256,7 @@ export default function AIChatWidget() {
         // Also clear server-side history
         try {
             const token = localStorage.getItem('token')
-            await fetch(`https://localhost:8443/api/ai/clear?sessionId=${sessionId}`, {
+            await fetch(`${apiBase}/api/ai/clear?sessionId=${sessionId}`, {
                 method: 'POST',
                 headers: token ? { 'Authorization': `Bearer ${token}` } : {}
             })

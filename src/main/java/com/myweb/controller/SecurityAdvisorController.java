@@ -66,6 +66,15 @@ public class SecurityAdvisorController {
     }
 
     /**
+     * POST /api/admin/advisor/insight
+     * AI insight for chart data.
+     */
+    @PostMapping("/insight")
+    public ResponseEntity<?> getChartInsight(@RequestBody Map<String, Object> chartData) {
+        return ResponseEntity.ok(advisorService.generatePieChartInsight(chartData));
+    }
+
+    /**
      * GET /api/admin/advisor/events?limit=50
      * Get recent security events.
      */

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +18,7 @@ import com.myweb.config.AIRateLimiter;
 import com.myweb.service.ChatHistoryService;
 import com.myweb.service.RAGService;
 
+import dev.langchain4j.model.chat.ChatLanguageModel;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -39,13 +41,19 @@ public class AIChatController {
     private final RAGService ragService;
     private final ChatHistoryService chatHistoryService;
     private final AIRateLimiter rateLimiter;
+    private final ChatLanguageModel chatModel;
+
+    @Value("${app.ai.ollama.model:qwen2.5:0.5b}")
+    private String ollamaModel;
 
     public AIChatController(RAGService ragService,
             ChatHistoryService chatHistoryService,
-            AIRateLimiter rateLimiter) {
+            AIRateLimiter rateLimiter,
+            ChatLanguageModel chatModel) {
         this.ragService = ragService;
         this.chatHistoryService = chatHistoryService;
         this.rateLimiter = rateLimiter;
+        this.chatModel = chatModel;
     }
 
     /**
@@ -160,6 +168,36 @@ public class AIChatController {
         health.put("status", allUp ? "UP" : "DEGRADED");
 
         return ResponseEntity.ok(health);
+    }
+
+    /**
+     * GET /api/ai/health-check
+     * Direct test for Ollama model.
+     */
+    @GetMapping("/health-check")
+    public ResponseEntity<?> aiHealthCheck() {
+        log.info("AI Model target: {}", ollamaModel);
+        long startTime = System.currentTimeMillis();
+        try {
+            String prompt = "Say 'Ready' if you are Qwen 2.5";
+            String aiResponse = chatModel.generate(prompt);
+            long latency = System.currentTimeMillis() - startTime;
+
+            log.info("AI Latency: {} ms", latency);
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "Connected",
+                    "reply", aiResponse,
+                    "latencyMs", latency));
+        } catch (Exception e) {
+            long latency = System.currentTimeMillis() - startTime;
+            log.error("AI connection failed after {} ms: {}", latency, e.getMessage());
+
+            return ResponseEntity.status(503).body(Map.of(
+                    "status", "Error",
+                    "instruction", "Hãy chạy lệnh 'ollama pull " + ollamaModel + "' trong terminal của bạn",
+                    "error", e.getMessage()));
+        }
     }
 
     /**

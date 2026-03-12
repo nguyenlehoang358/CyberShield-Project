@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import SolutionManager from './Admin/SolutionManager'
-import SimpleBarChart from '../components/Admin/SimpleBarChart'
 import SimplePieChart from '../components/Admin/SimplePieChart'
 import SecurityDashboard from '../components/SecurityDashboard/SecurityDashboard'
 import SecurityAdvisor from '../components/SecurityAdvisor/SecurityAdvisor'
 import ErrorBoundary from '../components/ErrorBoundary/ErrorBoundary'
+import ERDiagram from '../components/Admin/ERDiagram'
+import AdminSettings from '../components/AdminSettings/AdminSettings'
 import '../styles/admin-dashboard.css'
 import '../styles/lab.css'
 
@@ -22,11 +24,14 @@ export default function AdminDashboard() {
         charts: {},
         recentLogs: []
     })
+    const [chartInsight, setChartInsight] = useState('')
+    const [isTypingInsight, setIsTypingInsight] = useState(false)
     const [users, setUsers] = useState([])
     const [loadingData, setLoadingData] = useState(false)
 
     // Chart type toggle
     const [chartType, setChartType] = useState('bar')
+    const [showERDLightbox, setShowERDLightbox] = useState(false)
 
     // Database PIN lock
     const [dbUnlocked, setDbUnlocked] = useState(false)
@@ -56,11 +61,33 @@ export default function AdminDashboard() {
         try {
             const res = await api.get('/dashboard/stats')
             if (res.data) {
-                console.log('[Dashboard] API response:', JSON.stringify(res.data.charts))
-                console.log('[Dashboard] contacts:', res.data.charts?.contacts)
-                console.log('[Dashboard] blogs:', res.data.charts?.blogs)
-                console.log('[Dashboard] security:', res.data.charts?.security)
-                setStats(prev => ({ ...prev, ...res.data }))
+                setStats(prevStats => {
+                    // Check if there is a new blocked IP
+                    if (prevStats.latestBlockedIp !== undefined && res.data.latestBlockedIp && prevStats.latestBlockedIp !== res.data.latestBlockedIp) {
+                        toast.error(
+                            `🤖 Phát hiện hành vi tấn công dò mật khẩu từ IP [${res.data.latestBlockedIp}]. Hệ thống đã thực hiện chặn cứng để bảo vệ dữ liệu.`,
+                            { duration: 8000, style: { background: 'rgba(239, 68, 68, 0.9)', color: '#fff', border: '1px solid #ff0055', boxShadow: '0 0 15px rgba(255, 0, 85, 0.5)' } }
+                        )
+                    }
+                    return { ...prevStats, ...res.data }
+                })
+
+                // Fetch AI Insight if charts exist
+                if (res.data.charts && Object.keys(res.data.charts).length > 0) {
+                    try {
+                        setIsTypingInsight(true);
+                        setChartInsight('');
+                        const insightRes = await api.post('/admin/advisor/insight', res.data.charts)
+                        if (insightRes.data && insightRes.data.insight) {
+                            setChartInsight(insightRes.data.insight)
+                        }
+                    } catch (e) {
+                        console.error('Failed to load chart insight', e)
+                        setChartInsight('Tính năng phân tích AI tạm thời không hoạt động.')
+                    } finally {
+                        setIsTypingInsight(false);
+                    }
+                }
             }
         } catch (err) {
             console.error('Failed to load stats:', err?.response?.status, err?.message)
@@ -101,8 +128,10 @@ export default function AdminDashboard() {
             {/* Sidebar */}
             <aside className="admin-sidebar">
                 <div className="admin-sidebar-header">
-                    <Link to="/" className="admin-logo">CyberShield</Link>
-                    <span className="admin-badge">Admin Panel</span>
+                    <div>
+                        <Link to="/" className="admin-logo">CyberShield</Link>
+                        <span className="admin-badge">Admin Pro</span>
+                    </div>
                 </div>
                 <nav className="admin-sidebar-nav">
                     <button
@@ -110,56 +139,59 @@ export default function AdminDashboard() {
                         onClick={() => handleSectionChange('overview')}
                     >
                         <i className='bx bx-grid-alt'></i>
-                        <span>{lang === 'vi' ? 'Tổng quan' : 'Overview'}</span>
-                    </button>
-                    <button
-                        className={`admin-nav-item ${activeSection === 'database' ? 'active' : ''}`}
-                        onClick={() => handleSectionChange('database')}
-                    >
-                        <i className='bx bx-data'></i>
-                        <span>{lang === 'vi' ? 'Cơ sở dữ liệu' : 'Database'}</span>
-                    </button>
-                    <button
-                        className={`admin-nav-item ${activeSection === 'users' ? 'active' : ''}`}
-                        onClick={() => handleSectionChange('users')}
-                    >
-                        <i className='bx bx-user'></i>
-                        <span>{lang === 'vi' ? 'Người dùng' : 'Users'}</span>
-                    </button>
-                    <button
-                        className={`admin-nav-item ${activeSection === 'solutions' ? 'active' : ''}`}
-                        onClick={() => handleSectionChange('solutions')}
-                    >
-                        <i className='bx bx-layer'></i>
-                        <span>{lang === 'vi' ? 'Giải pháp' : 'Solutions'}</span>
-                    </button>
-                    <button
-                        className={`admin-nav-item ${activeSection === 'security' ? 'active' : ''}`}
-                        onClick={() => handleSectionChange('security')}
-                    >
-                        <i className='bx bx-shield-quarter'></i>
-                        <span>{lang === 'vi' ? 'Bảo mật' : 'Security'}</span>
+                        <span>{lang === 'vi' ? 'Dashboard' : 'Dashboard'}</span>
                     </button>
                     <button
                         className={`admin-nav-item ${activeSection === 'advisor' ? 'active' : ''}`}
                         onClick={() => handleSectionChange('advisor')}
                     >
                         <i className='bx bx-bot'></i>
-                        <span>{lang === 'vi' ? 'AI Advisor' : 'AI Advisor'}</span>
+                        <span>{lang === 'vi' ? 'AI Security Advisor' : 'AI Security Advisor'}</span>
                     </button>
-                    <button className="admin-nav-item disabled">
+                    <button
+                        className={`admin-nav-item ${activeSection === 'database' ? 'active' : ''}`}
+                        onClick={() => handleSectionChange('database')}
+                    >
+                        <i className='bx bx-data'></i>
+                        <span>{t('admin_db_manager')}</span>
+                    </button>
+                    <button
+                        className={`admin-nav-item ${activeSection === 'users' ? 'active' : ''}`}
+                        onClick={() => handleSectionChange('users')}
+                    >
+                        <i className='bx bx-user'></i>
+                        <span>{t('admin_user_mgr')}</span>
+                    </button>
+                    <button
+                        className={`admin-nav-item ${activeSection === 'solutions' ? 'active' : ''}`}
+                        onClick={() => handleSectionChange('solutions')}
+                    >
+                        <i className='bx bx-layer'></i>
+                        <span>{t('admin_sol_mgr')}</span>
+                    </button>
+                    <button
+                        className={`admin-nav-item ${activeSection === 'security' ? 'active' : ''}`}
+                        onClick={() => handleSectionChange('security')}
+                    >
+                        <i className='bx bx-shield-quarter'></i>
+                        <span>{t('admin_sys_sec')}</span>
+                    </button>
+                    <button
+                        className={`admin-nav-item ${activeSection === 'settings' ? 'active' : ''}`}
+                        onClick={() => handleSectionChange('settings')}
+                    >
                         <i className='bx bx-cog'></i>
-                        <span>{lang === 'vi' ? 'Cài đặt' : 'Settings'}</span>
+                        <span>{t('admin_sys_settings')}</span>
                     </button>
                 </nav>
                 <div className="admin-sidebar-footer">
                     <Link to="/" className="admin-nav-item">
                         <i className='bx bx-home'></i>
-                        <span>{lang === 'vi' ? 'Về trang chủ' : 'Home'}</span>
+                        <span>{t('admin_home')}</span>
                     </Link>
                     <button className="admin-nav-item" onClick={handleLogout}>
                         <i className='bx bx-log-out'></i>
-                        <span>{lang === 'vi' ? 'Đăng xuất' : 'Logout'}</span>
+                        <span>{t('admin_logout')}</span>
                     </button>
                 </div>
             </aside>
@@ -168,21 +200,22 @@ export default function AdminDashboard() {
             <main className="admin-main">
                 <header className="admin-header">
                     <div className="admin-header-left">
-                        <h1 className="admin-page-title lab-hub-title" style={{ marginBottom: 0, fontSize: '1.8rem' }}>
-                            {activeSection === 'overview' && (lang === 'vi' ? 'Tổng quan hệ thống' : 'System Overview')}
-                            {activeSection === 'database' && 'Database Manager'}
-                            {activeSection === 'users' && (lang === 'vi' ? 'Quản lý người dùng' : 'User Management')}
-                            {activeSection === 'solutions' && (lang === 'vi' ? 'Quản lý Giải pháp' : 'Solutions Management')}
-                            {activeSection === 'security' && (lang === 'vi' ? 'Bảo mật hệ thống' : 'System Security')}
-                            {activeSection === 'advisor' && (lang === 'vi' ? 'AI Security Advisor' : 'AI Security Advisor')}
+                        <h1 className="admin-page-title" style={{ marginBottom: 0, fontSize: '1.8rem', color: '#ffffff' }}>
+                            {activeSection === 'overview' && t('admin_sys_overview')}
+                            {activeSection === 'database' && t('admin_db_manager')}
+                            {activeSection === 'users' && t('admin_user_mgr')}
+                            {activeSection === 'solutions' && t('admin_sol_mgr')}
+                            {activeSection === 'security' && t('admin_sys_sec')}
+                            {activeSection === 'advisor' && t('admin_ai_advisor')}
+                            {activeSection === 'settings' && t('admin_sys_settings')}
                         </h1>
                     </div>
 
                     <div className="admin-header-actions">
                         <button onClick={toggleLang} className="admin-lang-toggle" style={{ fontWeight: 'bold' }}>
-                            {lang === 'vi' ? 'VI / EN' : 'EN / VI'}
+                            {lang.toUpperCase()}
                         </button>
-                        <span className="admin-user-info" style={{ fontWeight: 'bold' }}>
+                        <span className="admin-user-info" style={{ fontWeight: 'bold', color: '#1a1a1a', backgroundColor: '#ffffff' }}>
                             <i className='bx bx-user-circle'></i> {user?.username}
                         </span>
                     </div>
@@ -208,11 +241,11 @@ export default function AdminDashboard() {
                                         <span className="admin-stat-label">Messages</span>
                                     </div>
                                 </div>
-                                <div className="admin-stat-card">
-                                    <i className='bx bx-shield admin-stat-icon'></i>
+                                <div className="admin-stat-card glowing-danger">
+                                    <i className='bx bx-shield admin-stat-icon' style={{ color: '#ff0055', textShadow: '0 0 10px #ff0055' }}></i>
                                     <div>
-                                        <span className="admin-stat-value">{stats.charts?.security?.danger ?? 0}</span>
-                                        <span className="admin-stat-label">Security Alerts</span>
+                                        <span className="admin-stat-value" style={{ textShadow: '0 0 8px #ff0055' }}>{stats.blockedIpCount ?? 0}</span>
+                                        <span className="admin-stat-label">{t('admin_blocked_ips')}</span>
                                     </div>
                                 </div>
                                 <div className="admin-stat-card">
@@ -227,132 +260,182 @@ export default function AdminDashboard() {
                             {/* Charts Section */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '3rem', marginBottom: '1.5rem' }}>
                                 <h3 style={{ color: '#ffffff', fontWeight: 600, margin: 0 }}>
-                                    {lang === 'vi' ? 'Thống kê dữ liệu' : 'Data Analytics'}
+                                    {lang === 'vi' ? 'Thống kê dữ liệu & AI Insight' : 'Data Analytics & AI Insight'}
                                 </h3>
-                                <button
-                                    onClick={() => setChartType(prev => prev === 'bar' ? 'pie' : 'bar')}
-                                    style={{
-                                        background: 'rgba(88,166,255,0.12)',
-                                        border: '1px solid rgba(88,166,255,0.3)',
-                                        color: '#58a6ff',
-                                        padding: '0.4rem 1rem',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.4rem',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    {chartType === 'bar' ? '🥧' : '📊'}
-                                    {lang === 'vi'
-                                        ? `Chuyển biểu đồ (${chartType === 'bar' ? 'Tròn' : 'Cột'})`
-                                        : `Switch to ${chartType === 'bar' ? 'Pie' : 'Bar'}`
-                                    }
-                                </button>
                             </div>
-                            <div
-                                key={chartType}
-                                style={{
-                                    animation: 'chartFadeIn 0.4s ease-out forwards'
-                                }}
-                            >
-                                <div className="admin-chart-grid">
-                                    {chartType === 'bar' ? (
-                                        <>
-                                            <SimpleBarChart
-                                                title={lang === 'vi' ? 'Liên hệ khách hàng' : 'Contact Messages'}
-                                                data={[
-                                                    { label: 'Unread', value: stats.charts?.contacts?.unread ?? 0, color: '#ef4444' },
-                                                    { label: 'Read', value: stats.charts?.contacts?.read ?? 0, color: '#22c55e' },
-                                                    { label: 'Total', value: stats.charts?.contacts?.total ?? 0, color: '#3b82f6' }
-                                                ]}
-                                            />
-                                            <SimpleBarChart
-                                                title={lang === 'vi' ? 'Bài viết & Tin tức' : 'Blogs & News'}
-                                                data={[
-                                                    { label: 'Published', value: stats.charts?.blogs?.published ?? 0, color: '#22c55e' },
-                                                    { label: 'Drafts', value: stats.charts?.blogs?.draft ?? 0, color: '#f59e0b' },
-                                                    { label: 'Total', value: stats.charts?.blogs?.total ?? 0, color: '#3b82f6' }
-                                                ]}
-                                            />
-                                            <SimpleBarChart
-                                                title={lang === 'vi' ? 'Trạng thái bảo mật' : 'Security Status'}
-                                                data={[
-                                                    { label: 'Danger', value: stats.charts?.security?.danger ?? 0, color: '#ef4444' },
-                                                    { label: 'Safe Ops', value: stats.charts?.security?.safe ?? 0, color: '#22c55e' }
-                                                ]}
-                                            />
-                                        </>
+
+                            {/* AI Insight Box */}
+                            <div className={`admin-ai-insight-box ${isTypingInsight ? 'glowing' : ''}`}>
+                                <div className="insight-header">
+                                    <i className='bx bx-brain'></i>
+                                    <span>Qwen 2.5 Insight</span>
+                                </div>
+                                <div className="insight-content">
+                                    {isTypingInsight ? (
+                                        <div className="typing-indicator">
+                                            <span></span><span></span><span></span>
+                                        </div>
                                     ) : (
-                                        <>
-                                            <SimplePieChart
-                                                title={lang === 'vi' ? 'Liên hệ khách hàng' : 'Contact Messages'}
-                                                data={[
-                                                    { label: 'Unread', value: stats.charts?.contacts?.unread ?? 0, color: '#ef4444' },
-                                                    { label: 'Read', value: stats.charts?.contacts?.read ?? 0, color: '#22c55e' }
-                                                ]}
-                                            />
-                                            <SimplePieChart
-                                                title={lang === 'vi' ? 'Bài viết & Tin tức' : 'Blogs & News'}
-                                                data={[
-                                                    { label: 'Published', value: stats.charts?.blogs?.published ?? 0, color: '#22c55e' },
-                                                    { label: 'Drafts', value: stats.charts?.blogs?.draft ?? 0, color: '#f59e0b' }
-                                                ]}
-                                            />
-                                            <SimplePieChart
-                                                title={lang === 'vi' ? 'Trạng thái bảo mật' : 'Security Status'}
-                                                data={[
-                                                    { label: 'Danger', value: stats.charts?.security?.danger ?? 0, color: '#ef4444' },
-                                                    { label: 'Safe Ops', value: stats.charts?.security?.safe ?? 0, color: '#22c55e' }
-                                                ]}
-                                            />
-                                        </>
+                                        <p className="typewriter-text">{chartInsight || 'Chưa có phân tích dữ liệu.'}</p>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Security Logs Table */}
-                            <h3 style={{ marginBottom: '1.5rem', marginTop: '2rem', color: '#ffffff', fontWeight: 600 }}>
-                                {lang === 'vi' ? 'Nhật ký bảo mật gần đây' : 'Recent Security Logs'}
-                            </h3>
-                            <div className="admin-table-wrapper">
-                                <div className="admin-table-scroll">
-                                    <table className="admin-data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Time</th>
-                                                <th>Action</th>
-                                                <th>User</th>
-                                                <th>IP</th>
-                                                <th>Severity</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {stats.recentLogs?.length > 0 ? (
-                                                stats.recentLogs.map(log => (
-                                                    <tr key={log.id}>
-                                                        <td>{formatDate(log.timestamp)}</td>
-                                                        <td>{log.action}</td>
-                                                        <td>{log.username || 'Anonymous'}</td>
-                                                        <td>{log.ipAddress}</td>
-                                                        <td className={`log-severity-${log.severity}`}>{log.severity}</td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '1rem' }}>No logs available</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
+                            <div style={{ animation: 'chartFadeIn 0.4s ease-out forwards' }}>
+                                <div className="admin-chart-grid">
+                                    <SimplePieChart
+                                        title={lang === 'vi' ? 'Liên hệ khách hàng (Contacts)' : 'Contact Messages'}
+                                        titleColor="#1a1a1a"
+                                        data={[
+                                            { label: 'Unread', value: stats.charts?.contacts?.unread ?? 0, color: '#ff0055' },
+                                            { label: 'Read', value: stats.charts?.contacts?.read ?? 0, color: '#00e5ff' }
+                                        ]}
+                                    />
+                                    <SimplePieChart
+                                        title={lang === 'vi' ? 'Bài viết & Tin tức (Blogs)' : 'Blogs & News'}
+                                        titleColor="#1a1a1a"
+                                        data={[
+                                            { label: 'Published', value: stats.charts?.blogs?.published ?? 0, color: '#00e5ff' },
+                                            { label: 'Drafts', value: stats.charts?.blogs?.draft ?? 0, color: '#facc15' }
+                                        ]}
+                                    />
+                                    <SimplePieChart
+                                        title={lang === 'vi' ? 'Trạng thái Bảo mật (Security)' : 'Security Status'}
+                                        titleColor="#1a1a1a"
+                                        data={[
+                                            { label: lang === 'vi' ? 'Truy cập bị chặn' : 'Blocked Access', value: stats.charts?.security?.blocked ?? 0, color: '#ff0055' },
+                                            { label: lang === 'vi' ? 'Truy cập an toàn' : 'Safe Access', value: stats.charts?.security?.safe ?? 0, color: '#39ff14' }
+                                        ]}
+                                    />
                                 </div>
                             </div>
 
-                            {/* Move database tables to actual Database section */}
+                            {/* Dual-Table Layout */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                                gap: '1.5rem',
+                                marginTop: '3rem'
+                            }}>
+                                {/* Table 1: Security Logs */}
+                                <div>
+                                    <h3 style={{ marginBottom: '1.5rem', color: '#ffffff', fontWeight: 600 }}>
+                                        {lang === 'vi' ? 'Nhật ký bảo mật gần đây' : 'Recent Security Logs'}
+                                    </h3>
+                                    <div className="admin-table-wrapper">
+                                        <div className="admin-table-scroll">
+                                            <table className="admin-data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Time</th>
+                                                        <th>Action</th>
+                                                        <th>User</th>
+                                                        <th>IP</th>
+                                                        <th>Severity</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {stats.recentLogs?.length > 0 ? (
+                                                        stats.recentLogs.map(log => (
+                                                            <tr key={log.id}>
+                                                                <td>{formatDate(log.timestamp)}</td>
+                                                                <td>{log.action}</td>
+                                                                <td>{log.username || 'Anonymous'}</td>
+                                                                <td>{log.ipAddress}</td>
+                                                                <td className={`log-severity-${log.severity}`}>{log.severity}</td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '1rem' }}>No logs available</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Table 2: Recent Users or DB Stats */}
+                                <div>
+                                    <h3 style={{ marginBottom: '1.5rem', color: '#ffffff', fontWeight: 600 }}>
+                                        {lang === 'vi' ? 'Cập nhật Người dùng' : 'Recent Users Update'}
+                                    </h3>
+                                    <div className="admin-table-wrapper">
+                                        <div className="admin-table-scroll">
+                                            <table className="admin-data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Account</th>
+                                                        <th>Status</th>
+                                                        <th>Roles</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {users && users.length > 0 ? (
+                                                        users.slice(0, 50).map(u => (
+                                                            <tr key={u.id}>
+                                                                <td>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--accent-light)', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>
+                                                                            {u.username?.charAt(0)?.toUpperCase()}
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                            <span style={{ fontWeight: 600 }}>{u.username}</span>
+                                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{u.email}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <span className={`admin-status ${u.enabled !== false ? 'active' : 'locked'}`}>
+                                                                        {u.enabled !== false ? 'Active' : 'Locked'}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    {typeof u.roles === 'string'
+                                                                        ? u.roles.split(', ')[0]
+                                                                        : u.roles?.[0]?.name || u.roles?.[0] || 'USER'}
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr><td colSpan="3" style={{ textAlign: 'center', padding: '1rem' }}>No users available</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div> {/* End Dual-Table */}
                         </section>
                     )}
 
+                    {/* ERD Lightbox Modal */}
+                    {showERDLightbox && (
+                        <div style={{
+                            position: 'fixed', inset: 0,
+                            background: 'rgba(5, 8, 18, 0.96)', backdropFilter: 'blur(10px)',
+                            zIndex: 10000, display: 'flex', flexDirection: 'column',
+                            padding: '2rem', animation: 'fadeIn 0.2s ease-out'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '0 1rem' }}>
+                                <h2 style={{ color: 'var(--text-primary)', margin: 0, fontWeight: 700 }}>
+                                    {lang === 'vi' ? 'Sơ đồ Thực thể Quan hệ (Toàn màn hình)' : 'Entity Relationship Diagram (Full Screen)'}
+                                </h2>
+                                <button onClick={() => setShowERDLightbox(false)} style={{
+                                    background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444',
+                                    border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '50%',
+                                    width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', fontSize: '1.8rem', transition: 'all 0.2s',
+                                    boxShadow: '0 0 15px rgba(239, 68, 68, 0.2)'
+                                }}>
+                                    <i className='bx bx-x'></i>
+                                </button>
+                            </div>
+                            <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: '16px' }}>
+                                <ERDiagram lang={lang} isMini={false} />
+                            </div>
+                        </div>
+                    )}
                     {/* Section: Database */}
                     {activeSection === 'database' && (
                         <section className="admin-section">
@@ -379,7 +462,7 @@ export default function AdminDashboard() {
                                         }}>
                                             🔒
                                         </div>
-                                        <h3 style={{ color: '#e2e8f0', fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                                        <h3 style={{ color: 'var(--text-primary)', fontSize: '1.25rem', fontWeight: 800, margin: '1.5rem 0 0.5rem' }}>
                                             {lang === 'vi' ? 'Khu vực bảo mật' : 'Secured Area'}
                                         </h3>
                                         <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
@@ -455,13 +538,13 @@ export default function AdminDashboard() {
                             ) : (
                                 /* ═══ UNLOCKED DATABASE CONTENT ═══ */
                                 <>
-                                    <h3 style={{ marginBottom: '1.5rem', color: '#cbd5e1' }}>
+                                    <h3 style={{ marginBottom: '1.5rem', color: '#FFFFFF', fontWeight: 700 }}>
                                         {lang === 'vi' ? 'Sơ đồ cơ sở dữ liệu hệ thống' : 'Database Schema Overview'}
                                     </h3>
                                     {stats.tables?.length > 0 ? (
-                                        <div className="admin-table-wrapper">
-                                            <div className="admin-table-header">
-                                                <h3>{lang === 'vi' ? 'Gồm ' + stats.tables.length + ' bảng dữ liệu chính (Cập nhật thời gian thực)' : stats.tables.length + ' Tables Found (Real-time)'}</h3>
+                                        <div>
+                                            <div className="admin-table-header" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.25rem' }}>
+                                                <h3 style={{ color: '#1A1A1A', margin: 0, fontSize: '1.1rem' }}>{lang === 'vi' ? 'Gồm ' + stats.tables.length + ' bảng dữ liệu chính (Cập nhật thời gian thực)' : stats.tables.length + ' Tables Found (Real-time)'}</h3>
                                                 <div style={{ display: 'flex', gap: '8px' }}>
                                                     <button className="admin-btn admin-btn-sm" onClick={loadStats}>
                                                         <i className='bx bx-refresh'></i> Refresh
@@ -476,27 +559,62 @@ export default function AdminDashboard() {
                                                     >
                                                         <i className='bx bx-link-external'></i> {lang === 'vi' ? 'Truy cập pgAdmin' : 'Open pgAdmin'}
                                                     </button>
+                                                    <button
+                                                        className="admin-btn admin-btn-sm"
+                                                        onClick={() => window.open('https://console.neon.tech/app/projects/solitary-unit-23173474/branches/br-tiny-smoke-a170qjq4/tables?database=neondb', '_blank')}
+                                                        style={{
+                                                            background: 'linear-gradient(135deg, #0ce6ac, #07b587)',
+                                                            border: 'none', color: '#1A1A1A', fontWeight: 'bold'
+                                                        }}
+                                                    >
+                                                        <i className='bx bx-cloud-light-rain'></i> {lang === 'vi' ? 'Truy cập Neon' : 'Open Neon DB'}
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div className="admin-table-scroll">
-                                                <table className="admin-data-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Table Name</th>
-                                                            <th>Records</th>
-                                                            <th>Description</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {stats.tables.map((t, i) => (
-                                                            <tr key={i}>
-                                                                <td><code style={{ color: 'var(--accent-color)', fontWeight: 600 }}>{t.name}</code></td>
-                                                                <td>{t.rows}</td>
-                                                                <td>{t.description}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
+                                            <div style={{
+                                                display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '1.5rem', marginTop: '1.5rem'
+                                            }}>
+                                                <div className="admin-table-wrapper">
+                                                    <div className="admin-table-scroll">
+                                                        <table className="admin-data-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Table Name</th>
+                                                                    <th>Records</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {stats.tables.slice(0, Math.ceil(stats.tables.length / 2)).map((t, i) => (
+                                                                    <tr key={i}>
+                                                                        <td><code style={{ color: 'var(--accent-color)', fontWeight: 600 }}>{t.name}</code></td>
+                                                                        <td>{t.rows}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+
+                                                <div className="admin-table-wrapper">
+                                                    <div className="admin-table-scroll">
+                                                        <table className="admin-data-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Table Name</th>
+                                                                    <th>Records</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {stats.tables.slice(Math.ceil(stats.tables.length / 2)).map((t, i) => (
+                                                                    <tr key={i}>
+                                                                        <td><code style={{ color: 'var(--accent-color)', fontWeight: 600 }}>{t.name}</code></td>
+                                                                        <td>{t.rows}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
@@ -504,6 +622,30 @@ export default function AdminDashboard() {
                                             <p style={{ color: 'var(--text-secondary)' }}>Loading database overview...</p>
                                         </div>
                                     )}
+
+                                    {/* ═══ ER DIAGRAM SECTION ═══ */}
+                                    <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', position: 'relative' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                            <h3 style={{ color: 'var(--text-primary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                                                <i className='bx bx-git-repo-forked' style={{ color: 'var(--accent-color)' }}></i>
+                                                {lang === 'vi' ? 'Sơ đồ quan hệ Entity (ER Diagram)' : 'Entity Relationship Diagram'}
+                                            </h3>
+                                            <button
+                                                className="admin-btn admin-btn-sm"
+                                                onClick={() => setShowERDLightbox(true)}
+                                            >
+                                                <i className='bx bx-fullscreen'></i> {lang === 'vi' ? 'Phóng to' : 'Fullscreen'}
+                                            </button>
+                                        </div>
+                                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1rem', lineHeight: 1.6 }}>
+                                            {lang === 'vi'
+                                                ? 'Sơ đồ thu nhỏ. Nhấn Phóng to để tương tác đầy đủ.'
+                                                : 'Mini diagram. Click Fullscreen for full interaction.'}
+                                        </p>
+                                        <div style={{ height: '400px', width: '100%', position: 'relative', borderRadius: '8px', overflow: 'hidden' }}>
+                                            <ERDiagram lang={lang} isMini={true} onClick={() => setShowERDLightbox(true)} />
+                                        </div>
+                                    </div>
                                 </>
                             )}
                         </section>
@@ -520,7 +662,7 @@ export default function AdminDashboard() {
                                         <i className='bx bx-refresh'></i> Refresh
                                     </button>
                                 </div>
-                                <div className="admin-table-scroll">
+                                <div className="admin-table-scroll" style={{ maxHeight: 'calc(100vh - 250px)' }}>
                                     <table className="admin-data-table">
                                         <thead>
                                             <tr>
@@ -600,8 +742,17 @@ export default function AdminDashboard() {
                             </ErrorBoundary>
                         </section>
                     )}
+
+                    {/* Section: System Settings */}
+                    {activeSection === 'settings' && (
+                        <section className="admin-section">
+                            <ErrorBoundary title="Settings Error" message="Could not load System Settings. Please refresh.">
+                                <AdminSettings />
+                            </ErrorBoundary>
+                        </section>
+                    )}
                 </div>
             </main>
-        </div>
+        </div >
     )
 }

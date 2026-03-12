@@ -224,8 +224,36 @@ export default function Home() {
     useEffect(() => {
         const fetchSolutions = async () => {
             try {
-                const res = await axios.get('https://localhost:8443/api/public/solutions')
-                setSolutions(res.data)
+                const currentHost = window.location.hostname;
+                let apiPath = `https://${currentHost}:8443/api/public/solutions`;
+
+                if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+                    apiPath = '/api/public/solutions';
+                } else if (currentHost.includes('ngrok-free.app') || currentHost.includes('ngrok-free.dev')) {
+                    apiPath = import.meta.env.VITE_NGROK_BACKEND_URL ? `${import.meta.env.VITE_NGROK_BACKEND_URL}/public/solutions` : `https://api-${currentHost}/api/public/solutions`;
+                }
+                const res = await axios.get(apiPath, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true',
+                        'bypass-tunnel-reminder': 'true'
+                    }
+                });
+                const parsedSolutions = res.data.map(s => {
+                    let parsedDetail = null;
+                    let parsedLabs = [];
+                    try {
+                        if (s.detailJson) parsedDetail = JSON.parse(s.detailJson);
+                        if (s.relatedLabsJson) parsedLabs = JSON.parse(s.relatedLabsJson);
+                    } catch (e) {
+                        console.error('Lỗi khi parse JSON của solution:', s.id, e);
+                    }
+                    return {
+                        ...s,
+                        detail: parsedDetail,
+                        relatedLabs: parsedLabs
+                    };
+                });
+                setSolutions(parsedSolutions)
             } catch (err) {
                 console.error('Failed to load solutions from API:', err)
                 setSolutions([])

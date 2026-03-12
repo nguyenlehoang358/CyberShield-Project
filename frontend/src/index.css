@@ -85,6 +85,7 @@ a {
     width: auto;
     max-width: 95%;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .navbar:hover {
@@ -219,7 +220,11 @@ a {
 }
 
 .user-menu-content {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: absolute;
     top: calc(100% + 4px);
     right: 0;
@@ -251,7 +256,10 @@ a {
 }
 
 .user-menu:hover .user-menu-content {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
 }
 
 .user-menu-content a {

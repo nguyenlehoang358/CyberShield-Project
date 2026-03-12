@@ -10,12 +10,12 @@ const translations = {
         title: '🛡️ Bảo Mật & Brute Force Protection',
         subtitle: 'Giám sát an ninh hệ thống thời gian thực',
         statsTitle: 'Tổng quan bảo mật',
-        failures24h: 'Đăng nhập thất bại (24h)',
-        successes24h: 'Đăng nhập thành công (24h)',
+        failures24h: 'Tổng đăng nhập thất bại',
+        successes24h: 'Tổng đăng nhập thành công',
         failures1h: 'Thất bại (1 giờ qua)',
         blockedIPs: 'IP đang bị chặn',
-        topAttackers: 'Top IP tấn công (24h)',
-        topTargets: 'Tài khoản bị nhắm (24h)',
+        topAttackers: 'Top IP tấn công (Toàn thời gian)',
+        topTargets: 'Tài khoản bị nhắm (Toàn thời gian)',
         blockedIPsTitle: 'Danh sách IP bị chặn',
         loginLog: 'Nhật ký đăng nhập',
         ip: 'Địa chỉ IP',
@@ -53,12 +53,12 @@ const translations = {
         title: '🛡️ Security & Brute Force Protection',
         subtitle: 'Real-time system security monitoring',
         statsTitle: 'Security Overview',
-        failures24h: 'Failed Logins (24h)',
-        successes24h: 'Successful Logins (24h)',
+        failures24h: 'Total Failed Logins',
+        successes24h: 'Total Successful Logins',
         failures1h: 'Failures (last 1h)',
         blockedIPs: 'Blocked IPs',
-        topAttackers: 'Top Attacking IPs (24h)',
-        topTargets: 'Targeted Accounts (24h)',
+        topAttackers: 'Top Attacking IPs (All-time)',
+        topTargets: 'Targeted Accounts (All-time)',
         blockedIPsTitle: 'Blocked IP List',
         loginLog: 'Login Attempts Log',
         ip: 'IP Address',
@@ -118,7 +118,9 @@ export default function SecurityDashboard() {
 
     const fetchStats = async () => {
         try {
-            const res = await api.get(`${ADMIN_SECURITY_PATH}/stats`)
+            const res = await api.get(`${ADMIN_SECURITY_PATH}/stats`, {
+                headers: { 'ngrok-skip-browser-warning': 'true', 'bypass-tunnel-reminder': 'true' }
+            })
             setStats(res.data)
         } catch (e) {
             console.error('Stats error:', e.response?.data || e.message)
@@ -128,7 +130,9 @@ export default function SecurityDashboard() {
 
     const fetchBlockedIPs = async (page = 0) => {
         try {
-            const res = await api.get(`${ADMIN_SECURITY_PATH}/blocked-ips?page=${page}&size=15`)
+            const res = await api.get(`${ADMIN_SECURITY_PATH}/blocked-ips?page=${page}&size=15`, {
+                headers: { 'ngrok-skip-browser-warning': 'true', 'bypass-tunnel-reminder': 'true' }
+            })
             setBlockedIPs(res.data)
         } catch (e) {
             console.error('Blocked IPs error:', e.response?.data || e.message)
@@ -141,7 +145,9 @@ export default function SecurityDashboard() {
             const url = searchQuery
                 ? `${ADMIN_SECURITY_PATH}/login-attempts/search?q=${encodeURIComponent(searchQuery)}&page=${page}&size=15`
                 : `${ADMIN_SECURITY_PATH}/login-attempts?page=${page}&size=15`
-            const res = await api.get(url)
+            const res = await api.get(url, {
+                headers: { 'ngrok-skip-browser-warning': 'true', 'bypass-tunnel-reminder': 'true' }
+            })
             setLoginAttempts(res.data)
         } catch (e) {
             console.error('Login attempts error:', e.response?.data || e.message)
@@ -179,7 +185,9 @@ export default function SecurityDashboard() {
     const handleUnblock = async (ip) => {
         if (!window.confirm(`Unblock IP: ${ip}?`)) return
         try {
-            await api.delete(`${ADMIN_SECURITY_PATH}/unblock/${ip}`)
+            await api.delete(`${ADMIN_SECURITY_PATH}/unblock/${ip}`, {
+                headers: { 'ngrok-skip-browser-warning': 'true', 'bypass-tunnel-reminder': 'true' }
+            })
             refreshAll()
         } catch (e) {
             console.error('Unblock error:', e.response?.data || e.message)
@@ -190,7 +198,9 @@ export default function SecurityDashboard() {
         e.preventDefault()
         if (!blockIp.trim()) return
         try {
-            await api.post(`${ADMIN_SECURITY_PATH}/block-ip`, { ip: blockIp, durationMinutes: blockDuration })
+            await api.post(`${ADMIN_SECURITY_PATH}/block-ip`, { ip: blockIp, durationMinutes: blockDuration }, {
+                headers: { 'ngrok-skip-browser-warning': 'true', 'bypass-tunnel-reminder': 'true' }
+            })
             setBlockIp('')
             refreshAll()
         } catch (e) {
@@ -210,7 +220,9 @@ export default function SecurityDashboard() {
         setSocLoading(true)
 
         try {
-            const res = await api.post(`${ADMIN_SECURITY_PATH}/ai-chat`, { command: cmd })
+            const res = await api.post(`${ADMIN_SECURITY_PATH}/ai-chat`, { command: cmd }, {
+                headers: { 'ngrok-skip-browser-warning': 'true', 'bypass-tunnel-reminder': 'true' }
+            })
             const data = res.data
 
             setSocMessages(prev => [...prev, {
@@ -321,14 +333,14 @@ export default function SecurityDashboard() {
                         <div className="sec-stat-card sec-stat--danger">
                             <div className="sec-stat-icon">🚨</div>
                             <div className="sec-stat-info">
-                                <span className="sec-stat-value">{stats.failures24h || 0}</span>
+                                <span className="sec-stat-value">{stats.totalFailures || 0}</span>
                                 <span className="sec-stat-label">{t.failures24h}</span>
                             </div>
                         </div>
                         <div className="sec-stat-card sec-stat--success">
                             <div className="sec-stat-icon">✅</div>
                             <div className="sec-stat-info">
-                                <span className="sec-stat-value">{stats.successes24h || 0}</span>
+                                <span className="sec-stat-value">{stats.totalSuccesses || 0}</span>
                                 <span className="sec-stat-label">{t.successes24h}</span>
                             </div>
                         </div>
@@ -491,16 +503,28 @@ export default function SecurityDashboard() {
                                                 <td className="sec-time-cell">{formatTime(item.createdAt)}</td>
                                                 <td className="sec-ip-cell">{item.ipAddress}</td>
                                                 <td>
-                                                    {item.reason === 'AI_AUTO_BLOCKED'
-                                                        ? <span className="sec-badge sec-badge--danger">🤖 AI Auto-Blocked</span>
-                                                        : item.reason === 'MANUAL_ADMIN'
-                                                            ? <span className="sec-badge sec-badge--warning">👤 {t.blockManual}</span>
-                                                            : <span className="sec-badge sec-badge--muted">{item.reason}</span>}
+                                                    {(() => {
+                                                        const isUnblocked = item.reason && item.reason.includes('_UNBLOCKED');
+                                                        const orgReason = item.reason ? item.reason.replace('_UNBLOCKED', '') : '';
+
+                                                        return (
+                                                            <>
+                                                                {orgReason === 'AI_AUTO_BLOCKED'
+                                                                    ? <span className={`sec-badge ${isUnblocked ? 'sec-badge--muted' : 'sec-badge--danger'}`}>🤖 AI Auto-Blocked</span>
+                                                                    : orgReason === 'MANUAL_ADMIN'
+                                                                        ? <span className={`sec-badge ${isUnblocked ? 'sec-badge--muted' : 'sec-badge--warning'}`}>👤 {t.blockManual}</span>
+                                                                        : <span className={`sec-badge ${isUnblocked ? 'sec-badge--muted' : 'sec-badge--danger'}`}>{orgReason}</span>}
+                                                                {isUnblocked && <span className="sec-badge sec-badge--success" style={{ marginLeft: 8 }}>✅ Đã bỏ chặn</span>}
+                                                            </>
+                                                        )
+                                                    })()}
                                                 </td>
                                                 <td>
-                                                    <button className="sec-btn sec-btn--success sec-btn--sm" onClick={() => handleUnblock(item.ipAddress)}>
-                                                        🔓 {t.unblock}
-                                                    </button>
+                                                    {(!item.reason || !item.reason.includes('_UNBLOCKED')) && (
+                                                        <button className="sec-btn sec-btn--success sec-btn--sm" onClick={() => handleUnblock(item.ipAddress)}>
+                                                            🔓 {t.unblock}
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}

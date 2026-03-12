@@ -4,14 +4,15 @@ import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.myweb.service.SystemSettingService;
+
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 
 /**
  * AI / LLM Configuration
@@ -28,20 +29,11 @@ public class AIConfig {
 
     private static final Logger log = LoggerFactory.getLogger(AIConfig.class);
 
-    @Value("${app.ai.ollama.base-url}")
-    private String ollamaBaseUrl;
+    private final SystemSettingService settingService;
 
-    @Value("${app.ai.ollama.model}")
-    private String ollamaModel;
-
-    @Value("${app.ai.ollama.timeout-seconds}")
-    private int timeoutSeconds;
-
-    @Value("${app.ai.ollama.temperature}")
-    private double temperature;
-
-    @Value("${app.ai.ollama.max-tokens}")
-    private int maxTokens;
+    public AIConfig(SystemSettingService settingService) {
+        this.settingService = settingService;
+    }
 
     /**
      * Ollama Chat Model — connects to local Ollama server.
@@ -52,12 +44,19 @@ public class AIConfig {
      */
     @Bean
     public ChatLanguageModel chatLanguageModel() {
+        String ollamaBaseUrl = settingService.getSettingValue("ai.ollama_url", "http://localhost:11434");
+        String ollamaModel = settingService.getSettingValue("ai.ollama_model", "llama3.2");
+
+        int maxTokens = 1000;
+        int timeoutSeconds = 60;
+
         log.info("🤖 Configuring Ollama Chat Model: {} at {}", ollamaModel, ollamaBaseUrl);
 
         return OllamaChatModel.builder()
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaModel)
-                .temperature(temperature)
+                .temperature(0.0)
+                .numPredict(maxTokens)
                 .timeout(Duration.ofSeconds(timeoutSeconds))
                 .build();
     }

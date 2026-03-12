@@ -63,6 +63,12 @@ public class SecurityEvent {
 
     private Boolean resolved;
 
+    @Column(name = "resolved_at")
+    private Instant resolvedAt;
+
+    @Column(name = "resolution_notes", columnDefinition = "TEXT")
+    private String resolutionNotes;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -189,6 +195,22 @@ public class SecurityEvent {
 
     public void setResolved(Boolean resolved) {
         this.resolved = resolved;
+    }
+
+    public Instant getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(Instant resolvedAt) {
+        this.resolvedAt = resolvedAt;
+    }
+
+    public String getResolutionNotes() {
+        return resolutionNotes;
+    }
+
+    public void setResolutionNotes(String resolutionNotes) {
+        this.resolutionNotes = resolutionNotes;
     }
 
     public Instant getCreatedAt() {

@@ -41,6 +41,8 @@ public class SolutionService {
         solution.setColor(solutionDetails.getColor());
         solution.setDisplayOrder(solutionDetails.getDisplayOrder());
         solution.setActive(solutionDetails.getActive());
+        solution.setDetailJson(solutionDetails.getDetailJson());
+        solution.setRelatedLabsJson(solutionDetails.getRelatedLabsJson());
 
         return solutionRepository.save(solution);
     }

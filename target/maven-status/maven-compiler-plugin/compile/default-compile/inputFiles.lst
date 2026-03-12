@@ -1,5 +1,7 @@
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\AIProperties.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\security\JwtAuthFilter.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\CyberShieldDefaultsConfig.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\SystemSettingService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\AIConfig.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\ContactMessage.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\util\AttributeEncryptor.java
@@ -10,10 +12,12 @@ C:\Users\Asus-PC\myweb\src\main\java\com\myweb\controller\ContactController.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\controller\SolutionController.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\security\CustomUserDetailsService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\ForgotPasswordRequest.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\SystemSetting.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\BlockedIpHistory.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\DocumentService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\ApiErrorResponse.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\AiSecurityService.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\SolutionSeeder.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\AuthResponse.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\DataInitializer.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\SecurityHeadersFilter.java
@@ -52,6 +56,7 @@ C:\Users\Asus-PC\myweb\src\main\java\com\myweb\repository\LoginAttemptRepository
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\repository\RoleRepository.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\repository\BlogPostRepository.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\security\xss\StringSanitizerDeserializer.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\NotificationService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\AuthService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\security\xss\XssSanitizerUtil.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\ChatHistoryService.java
@@ -60,11 +65,14 @@ C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\WebSocketConfig.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\SecurityConfig.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\controller\AIChatController.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\SolutionService.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\TestRunner.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\AuditLog.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\security\CustomOAuth2UserService.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\controller\SystemSettingController.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\RegisterRequest.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\SecurityAdvisorService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\ERole.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\repository\SystemSettingRepository.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\Role.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\MywebApplication.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\AIRateLimiter.java

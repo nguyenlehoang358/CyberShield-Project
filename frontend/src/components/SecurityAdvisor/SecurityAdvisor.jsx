@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '../../context/LanguageContext'
+import { useAuth } from '../../context/AuthContext'
 import './SecurityAdvisor.css'
 
 const translations = {
@@ -15,7 +16,7 @@ const translations = {
         critical: 'Nghiêm trọng',
         high: 'Cao',
         eventsLastHour: 'Sự kiện (1h)',
-        events24h: 'Sự kiện (24h)',
+        events24h: 'Tổng sự kiện',
         severity: 'Mức độ',
         eventType: 'Loại sự kiện',
         sourceIp: 'IP nguồn',
@@ -31,7 +32,7 @@ const translations = {
         refresh: 'Làm mới',
         topAttackers: 'Top IP tấn công',
         severityDist: 'Phân bổ mức độ',
-        eventTypeDist: 'Loại sự kiện (24h)',
+        eventTypeDist: 'Phân loại sự kiện (Toàn thời gian)',
         logEvent: 'Ghi sự kiện',
         safe: 'An toàn',
         warning: 'Cảnh báo',
@@ -54,7 +55,7 @@ const translations = {
         critical: 'Critical',
         high: 'High',
         eventsLastHour: 'Events (1h)',
-        events24h: 'Events (24h)',
+        events24h: 'Total Events',
         severity: 'Severity',
         eventType: 'Event Type',
         sourceIp: 'Source IP',
@@ -70,7 +71,7 @@ const translations = {
         refresh: 'Refresh',
         topAttackers: 'Top Attacking IPs',
         severityDist: 'Severity Distribution',
-        eventTypeDist: 'Event Types (24h)',
+        eventTypeDist: 'Event Types (All-time)',
         logEvent: 'Log Event',
         safe: 'Safe',
         warning: 'Warning',
@@ -92,7 +93,13 @@ const severityConfig = {
 
 function renderMarkdownSimple(text) {
     if (!text) return null
-    return text.split('\n').map((line, i) => {
+    // Handle object (e.g., JSONB from DB) — extract meaningful text
+    let str = text
+    if (typeof text === 'object') {
+        str = text.analysis || text.summary || text.result || text.message || JSON.stringify(text, null, 2)
+    }
+    if (typeof str !== 'string') str = String(str)
+    return str.split('\n').map((line, i) => {
         let formatted = line
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/`([^`]+)`/g, '<code>$1</code>')
@@ -107,6 +114,7 @@ function renderMarkdownSimple(text) {
 
 export default function SecurityAdvisor() {
     const { language } = useLanguage()
+    const { api } = useAuth()
     const t = translations[language] || translations.vi
 
     const [activeTab, setActiveTab] = useState('overview')
@@ -116,25 +124,70 @@ export default function SecurityAdvisor() {
     const [loading, setLoading] = useState(true)
     const [reportLoading, setReportLoading] = useState(false)
     const [analyzingEvent, setAnalyzingEvent] = useState(null)
+    const [filterSeverity, setFilterSeverity] = useState('ALL') // Bộ lọc cho Tab Sự kiện theo mức độ
+    const [filterStatus, setFilterStatus] = useState('ALL') // Bộ lọc trạng thái: ALL, RESOLVED, PENDING, UNRESOLVED
+    const [aiInsight, setAiInsight] = useState(null)
+    const [insightLoading, setInsightLoading] = useState(false)
+    const [aiActivities, setAiActivities] = useState([])
 
-    const token = localStorage.getItem('token')
-    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    // Helper: push an AI activity message (max 5 entries)
+    const addActivity = (icon, message) => {
+        const entry = { id: Date.now(), icon, message, time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
+        setAiActivities(prev => [entry, ...prev].slice(0, 5))
+    }
 
     // Fetch dashboard stats
     const fetchStats = useCallback(async () => {
         try {
-            const res = await fetch('https://localhost:8443/api/admin/advisor/dashboard', { headers })
-            if (res.ok) setStats(await res.json())
-        } catch (e) { console.error('Stats error:', e) }
-    }, [])
+            addActivity('📊', 'Đang tải thống kê Dashboard...')
+            const res = await api.get('/admin/advisor/dashboard')
+            if (res.data) {
+                setStats(res.data)
+                addActivity('✅', `Đã tải ${res.data.totalEvents || 0} sự kiện — Risk Score: ${res.data.riskScore || 0}/100`)
+                fetchInsight(res.data)
+            }
+        } catch (e) {
+            addActivity('❌', 'Lỗi tải thống kê Dashboard')
+            console.error('Stats error:', e)
+        }
+    }, [api])
+
+    // Fetch AI Insight for Overview
+    const fetchInsight = async (dashboardStats) => {
+        setInsightLoading(true)
+        addActivity('🧠', 'AI Quick Insight đang phân tích tổng quan bảo mật...')
+        try {
+            const res = await api.post('/admin/advisor/insight', {
+                criticalCount: dashboardStats.criticalCount,
+                highCount: dashboardStats.highCount,
+                unresolvedCount: dashboardStats.unresolvedCount,
+                riskScore: dashboardStats.riskScore,
+            })
+            if (res.data?.insight) {
+                setAiInsight(res.data.insight)
+                addActivity('✅', 'AI Quick Insight đã hoàn thành phân tích')
+            }
+        } catch (e) {
+            addActivity('⚠️', 'AI Quick Insight tạm không khả dụng')
+            console.error('Insight error:', e)
+        }
+        setInsightLoading(false)
+    }
 
     // Fetch events
     const fetchEvents = useCallback(async () => {
         try {
-            const res = await fetch('https://localhost:8443/api/admin/advisor/events?limit=50', { headers })
-            if (res.ok) setEvents(await res.json())
-        } catch (e) { console.error('Events error:', e) }
-    }, [])
+            addActivity('📋', 'Đang tải danh sách sự kiện bảo mật...')
+            const res = await api.get('/admin/advisor/events?limit=50')
+            if (res.data) {
+                setEvents(res.data)
+                addActivity('✅', `Đã tải ${res.data.length || 0} sự kiện mới nhất`)
+            }
+        } catch (e) {
+            addActivity('❌', 'Lỗi tải danh sách sự kiện')
+            console.error('Events error:', e)
+        }
+    }, [api])
 
     useEffect(() => {
         Promise.all([fetchStats(), fetchEvents()]).finally(() => setLoading(false))
@@ -143,24 +196,29 @@ export default function SecurityAdvisor() {
             fetchEvents()
         }, 30000)
         return () => clearInterval(interval)
-    }, [])
+    }, [fetchStats, fetchEvents])
 
     // Generate AI Report
     const generateReport = async () => {
         setReportLoading(true)
+        addActivity('🧠', 'AI đang tạo Báo cáo Phân tích Mối đe dọa...')
         try {
-            const res = await fetch('https://localhost:8443/api/admin/advisor/report', { headers })
-            if (res.ok) setReport(await res.json())
-        } catch (e) { console.error('Report error:', e) }
+            const res = await api.get('/admin/advisor/report')
+            if (res.data) {
+                setReport(res.data)
+                addActivity('✅', `Báo cáo AI hoàn thành (${((res.data.responseTimeMs || 0) / 1000).toFixed(1)}s)`)
+            }
+        } catch (e) {
+            addActivity('❌', 'Lỗi tạo báo cáo AI')
+            console.error('Report error:', e)
+        }
         setReportLoading(false)
     }
 
     // Resolve event
     const resolveEvent = async (id) => {
         try {
-            await fetch(`https://localhost:8443/api/admin/advisor/resolve/${id}`, {
-                method: 'POST', headers
-            })
+            await api.post(`/admin/advisor/resolve/${id}`)
             fetchEvents()
             fetchStats()
         } catch (e) { console.error('Resolve error:', e) }
@@ -169,15 +227,17 @@ export default function SecurityAdvisor() {
     // Analyze event with AI
     const analyzeEvent = async (id) => {
         setAnalyzingEvent(id)
+        addActivity('🔍', `AI đang phân tích sự kiện #${id}...`)
         try {
-            const res = await fetch('https://localhost:8443/api/admin/advisor/analyze-event', {
-                method: 'POST', headers,
-                body: JSON.stringify({ eventId: id })
-            })
-            if (res.ok) {
+            const res = await api.post('/admin/advisor/analyze-event', { eventId: id })
+            if (res.data) {
+                addActivity('✅', `Phân tích sự kiện #${id} hoàn thành`)
                 fetchEvents()
             }
-        } catch (e) { console.error('Analyze error:', e) }
+        } catch (e) {
+            addActivity('❌', `Lỗi phân tích sự kiện #${id}`)
+            console.error('Analyze error:', e)
+        }
         setAnalyzingEvent(null)
     }
 
@@ -233,6 +293,7 @@ export default function SecurityAdvisor() {
                 <div className="sa-content">
                     {/* Risk Score Hero */}
                     <div className={`sa-risk-hero sa-risk--${riskLevel.class}`}>
+                        <div className="sa-risk-glow-layer"></div>
                         <div className="sa-risk-score-circle">
                             <svg viewBox="0 0 120 120" className="sa-risk-svg">
                                 <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
@@ -250,6 +311,44 @@ export default function SecurityAdvisor() {
                         <div className="sa-risk-info">
                             <span className="sa-risk-label">{t.riskScore}</span>
                             <span className="sa-risk-level">{riskLevel.emoji} {riskLevel.label}</span>
+                        </div>
+                    </div>
+
+                    {/* AI Activity Ticker */}
+                    <div className="sa-activity-ticker">
+                        <div className="sa-activity-header">
+                            <span className="sa-activity-icon">⚡</span>
+                            <span>AI Activity Log</span>
+                            {(insightLoading || reportLoading || analyzingEvent) && (
+                                <span className="sa-pulse-dot" />
+                            )}
+                        </div>
+                        <div className="sa-activity-list">
+                            {aiActivities.length === 0 ? (
+                                <div className="sa-activity-item sa-activity-idle">
+                                    <span className="sa-activity-item-icon">💤</span>
+                                    <span>AI đang chờ lệnh...</span>
+                                </div>
+                            ) : (
+                                aiActivities.map(a => (
+                                    <div key={a.id} className="sa-activity-item">
+                                        <span className="sa-activity-item-icon">{a.icon}</span>
+                                        <span className="sa-activity-item-msg">{a.message}</span>
+                                        <span className="sa-activity-item-time">{a.time}</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* AI Quick Insight Box */}
+                    <div className="sa-insight-box">
+                        <div className="sa-insight-header">
+                            🤖 AI Quick Insight
+                            {insightLoading && <span className="sa-pulse-dot"></span>}
+                        </div>
+                        <div className="sa-insight-body">
+                            {insightLoading ? 'Đang phân tích tổng quan tĩnh...' : (aiInsight || 'Không có dữ liệu.')}
                         </div>
                     </div>
 
@@ -326,54 +425,100 @@ export default function SecurityAdvisor() {
             {/* ═══ EVENTS TAB ═══ */}
             {activeTab === 'events' && (
                 <div className="sa-content">
-                    {events.length === 0 ? (
-                        <div className="sa-empty"><span>🛡️</span><p>{t.noEvents}</p></div>
-                    ) : (
-                        <div className="sa-events-list">
-                            {events.map(event => {
-                                const cfg = severityConfig[event.severity] || severityConfig.LOW
-                                return (
-                                    <div key={event.id} className={`sa-event-card ${event.resolved ? 'resolved' : ''}`}
-                                        style={{ borderLeftColor: cfg.color }}>
-                                        <div className="sa-event-header">
-                                            <span className="sa-event-severity" style={{ background: cfg.bg, color: cfg.color }}>
-                                                {cfg.emoji} {event.severity}
-                                            </span>
-                                            <span className="sa-event-type">{event.eventType}</span>
-                                            <span className="sa-event-time">{formatTime(event.createdAt)}</span>
-                                        </div>
-                                        <div className="sa-event-body">
-                                            <div className="sa-event-ip">🌐 {event.sourceIp || '-'}</div>
-                                            <div className="sa-event-desc">{event.description}</div>
-                                        </div>
-                                        {event.aiAnalysis && (
-                                            <div className="sa-event-ai">
-                                                <div className="sa-event-ai-title">🤖 AI Analysis</div>
-                                                <div className="sa-event-ai-content">
-                                                    {renderMarkdownSimple(event.aiAnalysis)}
-                                                </div>
-                                            </div>
-                                        )}
-                                        <div className="sa-event-actions">
-                                            {!event.resolved && (
-                                                <button className="sa-btn sa-btn--resolve" onClick={() => resolveEvent(event.id)}>
-                                                    ✅ {t.resolve}
-                                                </button>
-                                            )}
-                                            <button className="sa-btn sa-btn--analyze"
-                                                onClick={() => analyzeEvent(event.id)}
-                                                disabled={analyzingEvent === event.id}>
-                                                {analyzingEvent === event.id ? '⏳' : '🤖'} {t.analyze}
-                                            </button>
-                                            <span className={`sa-event-status ${event.resolved ? 'resolved' : 'pending'}`}>
-                                                {event.resolved ? `✅ ${t.resolved}` : `⏳ ${t.pending}`}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                    {/* Render Filters */}
+                    <div className="sa-event-filters">
+                        <div className="sa-filter-group">
+                            <span className="sa-filter-label">Mức độ:</span>
+                            {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map(sev => (
+                                <button
+                                    key={sev}
+                                    className={`sa-filter-btn ${filterSeverity === sev ? 'active' : ''}`}
+                                    onClick={() => setFilterSeverity(sev)}
+                                >
+                                    {sev === 'ALL' ? 'Tất cả' : `${severityConfig[sev]?.emoji} ${sev}`}
+                                </button>
+                            ))}
                         </div>
-                    )}
+                        <div className="sa-filter-group sa-filter-status-group">
+                            <span className="sa-filter-label">Trạng thái:</span>
+                            <button className={`sa-filter-btn ${filterStatus === 'ALL' ? 'active' : ''}`} onClick={() => setFilterStatus('ALL')}>
+                                🌐 Tất cả
+                            </button>
+                            <button className={`sa-filter-btn sa-filter-btn--resolved ${filterStatus === 'RESOLVED' ? 'active' : ''}`} onClick={() => setFilterStatus('RESOLVED')}>
+                                ✅ Đã xử lý
+                            </button>
+                            <button className={`sa-filter-btn sa-filter-btn--pending ${filterStatus === 'PENDING' ? 'active' : ''}`} onClick={() => setFilterStatus('PENDING')}>
+                                ⏳ Đang chờ xử lý
+                            </button>
+                            <button className={`sa-filter-btn sa-filter-btn--unresolved ${filterStatus === 'UNRESOLVED' ? 'active' : ''}`} onClick={() => setFilterStatus('UNRESOLVED')}>
+                                ⚠️ Chưa xử lý
+                            </button>
+                        </div>
+                    </div>
+
+                    {(() => {
+                        // Tính toán danh sách đã lọc
+                        const filteredEvents = events.filter(e => {
+                            // 1. Lọc theo severity
+                            if (filterSeverity !== 'ALL' && e.severity !== filterSeverity) return false;
+                            // 2. Lọc theo status
+                            if (filterStatus === 'RESOLVED' && !e.resolved) return false;
+                            // "Đang chờ xử lý": AI đã có đề xuất (aiAnalysis !== null) nhưng admin chưa chốt (resolved = false)
+                            if (filterStatus === 'PENDING' && (e.resolved || !e.aiAnalysis)) return false;
+                            // "Chưa xử lý": Hoàn toàn mới, chưa ai phân tích và chưa resolved
+                            if (filterStatus === 'UNRESOLVED' && (e.resolved || e.aiAnalysis)) return false;
+                            return true;
+                        });
+
+                        return filteredEvents.length === 0 ? (
+                            <div className="sa-empty"><span>🛡️</span><p>{t.noEvents}</p></div>
+                        ) : (
+                            <div className="sa-events-list">
+                                {filteredEvents.map(event => {
+                                    const cfg = severityConfig[event.severity] || severityConfig.LOW
+                                    return (
+                                        <div key={event.id} className={`sa-event-card ${event.resolved ? 'resolved' : ''}`}
+                                            style={{ borderLeftColor: cfg.color }}>
+                                            <div className="sa-event-header">
+                                                <span className="sa-event-severity" style={{ background: cfg.bg, color: cfg.color }}>
+                                                    {cfg.emoji} {event.severity}
+                                                </span>
+                                                <span className="sa-event-type">{event.eventType}</span>
+                                                <span className="sa-event-time">{formatTime(event.createdAt)}</span>
+                                            </div>
+                                            <div className="sa-event-body">
+                                                <div className="sa-event-ip">🌐 {event.sourceIp || '-'}</div>
+                                                <div className="sa-event-desc">{event.description}</div>
+                                            </div>
+                                            {event.aiAnalysis && (
+                                                <div className="sa-event-ai">
+                                                    <div className="sa-event-ai-title">🤖 AI Analysis</div>
+                                                    <div className="sa-event-ai-content">
+                                                        {renderMarkdownSimple(event.aiAnalysis)}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="sa-event-actions">
+                                                {!event.resolved && (
+                                                    <button className="sa-btn sa-btn--resolve" onClick={() => resolveEvent(event.id)}>
+                                                        ✅ {t.resolve}
+                                                    </button>
+                                                )}
+                                                <button className="sa-btn sa-btn--analyze"
+                                                    onClick={() => analyzeEvent(event.id)}
+                                                    disabled={analyzingEvent === event.id}>
+                                                    {analyzingEvent === event.id ? '⏳' : '🤖'} {t.analyze}
+                                                </button>
+                                                <span className={`sa-event-status ${event.resolved ? 'resolved' : 'pending'}`}>
+                                                    {event.resolved ? `✅ ${t.resolved}` : `⏳ ${t.pending}`}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )
+                    })()}
                 </div>
             )}
 
@@ -424,9 +569,17 @@ export default function SecurityAdvisor() {
                                 <span>{getRiskLevel(report.riskScore || 0).emoji} {getRiskLevel(report.riskScore || 0).label}</span>
                             </div>
 
-                            {/* AI Analysis Content */}
-                            <div className="sa-report-content">
-                                {renderMarkdownSimple(report.analysis)}
+                            {/* AI Analysis Content - Terminal Style */}
+                            <div className="sa-report-document">
+                                <div className="sa-report-doc-header">
+                                    <span className="sa-doc-dot red"></span>
+                                    <span className="sa-doc-dot yellow"></span>
+                                    <span className="sa-doc-dot green"></span>
+                                    <span className="sa-doc-title">cyber_threat_intel.md</span>
+                                </div>
+                                <div className="sa-report-content">
+                                    {renderMarkdownSimple(report.analysis)}
+                                </div>
                             </div>
 
                             {report.status === 'FALLBACK' && (

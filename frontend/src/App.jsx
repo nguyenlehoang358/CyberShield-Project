@@ -6,14 +6,16 @@ import { LabProgressProvider } from './context/LabProgressContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import AIChatWidget from './components/AIChatWidget/AIChatWidget'
+import SupportChatWidget from './components/SupportChatWidget/SupportChatWidget'
 import Home from './pages/Home'
 import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import About from './pages/About/About'
-import Certificate from './pages/About/Certificate'
-import Customer from './pages/About/Customer'
-import Partner from './pages/About/Partner'
+// Dòng import các trang bị thiếu chưa được tạo
+// import Certificate from './pages/About/Certificate'
+// import Customer from './pages/About/Customer'
+// import Partner from './pages/About/Partner'
 import Contact from './pages/Contact/Contact'
 import Placeholder from './components/Placeholder'
 import LabHub from './pages/Lab/LabHub'
@@ -74,6 +76,7 @@ function Layout() {
             </main>
             <Footer />
             <AIChatWidget />
+            <SupportChatWidget />
         </div>
     )
 }
@@ -107,9 +110,9 @@ function App() {
                                 {/* About Us Routes */}
                                 <Route path="/about" element={<About />} />
                                 <Route path="/about/intro" element={<About />} />
-                                <Route path="/about/cert" element={<Certificate />} />
-                                <Route path="/about/customer" element={<Customer />} />
-                                <Route path="/about/partner" element={<Partner />} />
+                                <Route path="/about/cert" element={<Placeholder title="Certificates" />} />
+                                <Route path="/about/customer" element={<Placeholder title="Customers" />} />
+                                <Route path="/about/partner" element={<Placeholder title="Partners" />} />
 
                                 {/* Lab Hub — Main page */}
                                 <Route path="/lab" element={<LabHub />} />

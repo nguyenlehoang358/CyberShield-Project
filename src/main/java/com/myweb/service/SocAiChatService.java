@@ -132,12 +132,13 @@ public class SocAiChatService {
     private String buildSecurityContext() {
         StringBuilder ctx = new StringBuilder();
 
-        // Recent login attempts (last 50)
+        // Recent login attempts (reduced to 15 to save LLM context window/speed up
+        // local model)
         List<LoginAttempt> recentAttempts = loginAttemptRepo
-                .findAllByOrderByCreatedAtDesc(PageRequest.of(0, 50))
+                .findAllByOrderByCreatedAtDesc(PageRequest.of(0, 15))
                 .getContent();
 
-        ctx.append("=== DỮ LIỆU ĐĂNG NHẬP GẦN ĐÂY (50 bản ghi mới nhất) ===\n");
+        ctx.append("=== DỮ LIỆU ĐĂNG NHẬP GẦN ĐÂY (15 bản ghi mới nhất) ===\n");
         if (recentAttempts.isEmpty()) {
             ctx.append("Chưa có dữ liệu đăng nhập.\n\n");
         } else {
@@ -158,9 +159,9 @@ public class SocAiChatService {
             ctx.append("\n");
         }
 
-        // Top attacking IPs (ALL-TIME)
-        List<Object[]> topIPs = loginAttemptRepo.findTopAttackingIPsAllTime(PageRequest.of(0, 10));
-        ctx.append("=== TOP IP TẤN CÔNG (TOÀN BỘ) ===\n");
+        // Top attacking IPs (ALL-TIME) - limited to Top 5
+        List<Object[]> topIPs = loginAttemptRepo.findTopAttackingIPsAllTime(PageRequest.of(0, 5));
+        ctx.append("=== TOP 5 IP TẤN CÔNG (TOÀN BỘ) ===\n");
         if (topIPs.isEmpty()) {
             ctx.append("Không có IP tấn công.\n\n");
         } else {
@@ -170,12 +171,12 @@ public class SocAiChatService {
             ctx.append("\n");
         }
 
-        // Recent blocked IPs
+        // Recent blocked IPs - scaled down to 5
         List<BlockedIpHistory> blockedHistory = blockedIpRepo
-                .findAllByOrderByCreatedAtDesc(PageRequest.of(0, 20))
+                .findAllByOrderByCreatedAtDesc(PageRequest.of(0, 5))
                 .getContent();
 
-        ctx.append("=== LỊCH SỬ IP BỊ CHẶN (20 bản ghi mới nhất) ===\n");
+        ctx.append("=== LỊCH SỬ IP BỊ CHẶN (5 bản ghi mới nhất) ===\n");
         if (blockedHistory.isEmpty()) {
             ctx.append("Chưa có IP nào bị chặn.\n\n");
         } else {
@@ -205,11 +206,11 @@ public class SocAiChatService {
                 + "1. Phân tích DỮ LIỆU THỰC bên dưới để trả lời câu hỏi Admin.\n"
                 + "2. Đánh giá mức độ rủi ro: 🟢 Thấp | 🟡 Trung bình | 🔴 Cao | ⛔ Nghiêm trọng\n"
                 + "3. Đề xuất hành động cụ thể (chặn IP, giám sát thêm, bỏ qua).\n"
-                + "4. Trả lời bằng tiếng Việt, ngắn gọn, có cấu trúc.\n"
-                + "5. Nếu Admin hỏi về một IP cụ thể, tìm IP đó trong dữ liệu và phân tích.\n\n"
+                + "4. BẮT BUỘC TRẢ LỜI NGẮN GỌN TRONG TỐI ĐA 3-4 CÂU. Không giải thích dông dài.\n"
+                + "5. Trả về format tối giản nhất, không lặp lại nguyên văn dữ kiện.\n\n"
                 + securityContext
                 + "=== LỆNH CỦA ADMIN ===\n"
                 + adminCommand + "\n\n"
-                + "Hãy phân tích và trả lời:";
+                + "Phân tích và trả lời:";
     }
 }

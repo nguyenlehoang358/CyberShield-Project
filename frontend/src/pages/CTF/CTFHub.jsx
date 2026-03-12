@@ -94,7 +94,7 @@ export default function CTFHub() {
                                 className="ctf-hint-btn"
                                 style={{ margin: 0, border: '1px solid var(--eco-border)', padding: '0.4rem 0.8rem', borderRadius: '6px' }}
                             >
-                                <Globe size={16} /> {lang === 'vi' ? 'English' : 'Tiếng Việt'}
+                                <Globe size={16} /> {lang.toUpperCase()}
                             </button>
                         </div>
                     </div>

@@ -47,20 +47,20 @@ export default function About() {
                 <div className="container">
                     <div className="about-stats-grid">
                         <div className="stat-item text-center">
-                            <h3 className="stat-number text-accent">5+</h3>
-                            <p className="stat-label">{t('about_exp')}</p>
+                            <h3 className="stat-number text-accent" style={{fontSize: '4rem', fontWeight: 800, marginBottom: '0.5rem'}}>5+</h3>
+                            <p className="stat-label" style={{color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem'}}>{t('about_exp')}</p>
                         </div>
                         <div className="stat-item text-center">
-                            <h3 className="stat-number text-accent-secondary">50+</h3>
-                            <p className="stat-label">{t('about_projects')}</p>
+                            <h3 className="stat-number text-accent-secondary" style={{fontSize: '4rem', fontWeight: 800, marginBottom: '0.5rem'}}>50+</h3>
+                            <p className="stat-label" style={{color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem'}}>{t('about_projects')}</p>
                         </div>
                         <div className="stat-item text-center">
-                            <h3 className="stat-number text-accent-pink">20+</h3>
-                            <p className="stat-label">{t('about_experts')}</p>
+                            <h3 className="stat-number text-accent-pink" style={{fontSize: '4rem', fontWeight: 800, marginBottom: '0.5rem'}}>20+</h3>
+                            <p className="stat-label" style={{color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem'}}>{t('about_experts')}</p>
                         </div>
                         <div className="stat-item text-center">
-                            <h3 className="stat-number text-accent-coral">98%</h3>
-                            <p className="stat-label">{t('about_satisfaction')}</p>
+                            <h3 className="stat-number text-accent-coral" style={{fontSize: '4rem', fontWeight: 800, marginBottom: '0.5rem'}}>98%</h3>
+                            <p className="stat-label" style={{color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem'}}>{t('about_satisfaction')}</p>
                         </div>
                     </div>
                 </div>
@@ -184,6 +184,87 @@ export default function About() {
                             </div>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            {/* Customers Section */}
+            <div className="section bg-white py-20 border-t border-border-light">
+                <div className="container">
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <h2 className="section-title text-primary">{t('about_customers_title') || 'Khách hàng'}</h2>
+                        <p className="text-secondary">{t('about_customers_subtitle') || 'Những đối tác tin cậy đã sử dụng hệ thống của chúng tôi'}</p>
+                    </div>
+                    <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3rem'}}>
+                        {[
+                            { name: "TechCorp", logo: "bx bxl-meta" },
+                            { name: "FinTech", logo: "bx bxl-stripe" },
+                            { name: "EduSmart", logo: "bx bxl-bootstrap" },
+                            { name: "HealthPlus", logo: "bx bxl-aws" },
+                            { name: "LogiTrans", logo: "bx bxl-docker" },
+                            { name: "RealEstate", logo: "bx bxl-airbnb" },
+                            { name: "ShopNow", logo: "bx bxl-amazon" },
+                            { name: "TravelWise", logo: "bx bxl-trip-advisor" }
+                        ].map((c, idx) => (
+                            <div key={idx} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.3s'}}>
+                                <i className={c.logo} style={{fontSize: '3rem', marginBottom: '0.75rem'}}></i>
+                                <span style={{fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)'}}>{c.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Partners Section */}
+            <div className="section section-dark py-20 relative overflow-hidden">
+                <div className="container relative z-10">
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <h2 className="section-title text-white">{t('about_partners_title') || 'Đối tác'}</h2>
+                        <p className="text-gray-400">{t('about_partners_subtitle') || 'Tích hợp với các công nghệ hàng đầu thế giới'}</p>
+                    </div>
+                    <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3rem'}}>
+                        {[
+                            { name: "Google Cloud", logo: "bx bxl-google-cloud" },
+                            { name: "Microsoft", logo: "bx bxl-microsoft" },
+                            { name: "IBM", logo: "bx bxl-java" },
+                            { name: "MongoDB", logo: "bx bxl-mongodb" },
+                            { name: "Kubernetes", logo: "bx bxl-kubernetes" },
+                            { name: "React", logo: "bx bxl-react" },
+                            { name: "Redis", logo: "bx bxl-python" },
+                            { name: "PostgreSQL", logo: "bx bxl-postgresql" }
+                        ].map((p, idx) => (
+                            <div key={idx} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', cursor: 'pointer', transition: 'all 0.3s'}}>
+                                <i className={p.logo} style={{fontSize: '3rem', marginBottom: '0.75rem'}}></i>
+                                <span style={{fontSize: '0.875rem', fontWeight: 600, color: 'white'}}>{p.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Certificates Section */}
+            <div className="section bg-white py-20 border-t border-border-light">
+                <div className="container">
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <h2 className="section-title text-primary">{t('about_certificates_title') || 'Chứng chỉ bảo mật'}</h2>
+                    </div>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem'}}>
+                        {[
+                            { title: 'ISO 27001:2022', desc: 'Hệ thống Quản lý An toàn Thông tin chuẩn Quốc tế' },
+                            { title: 'PCI DSS v4.0', desc: 'Bảo mật Thông tin Thẻ thanh toán mức cao nhất' },
+                            { title: 'SOC 2 Type II', desc: 'An toàn, Bảo mật, Tính sẵn sàng và Bảo vệ dữ liệu' }
+                        ].map((cert, index) => (
+                            <div key={index} style={{background: 'white', padding: '2rem', border: '1px solid var(--border-light)', borderRadius: '1rem', textAlign: 'center', boxShadow: '0 4px 30px rgba(0,0,0,0.03)', transition: 'all 0.3s'}}>
+                                <div style={{margin: '0 auto 1.5rem', width: '5rem', height: '5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: 'var(--accent)', borderRadius: '50%', border: '1px solid #dbeafe'}}>
+                                    <Award size={36} />
+                                </div>
+                                <h3 style={{fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)'}}>{cert.title}</h3>
+                                <p style={{color: 'var(--text-secondary)', fontSize: '0.875rem'}}>{cert.desc}</p>
+                                <div style={{marginTop: '1.5rem', display: 'inline-block', padding: '0.375rem 1rem', background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', fontSize: '0.75rem', fontWeight: 600, borderRadius: '9999px'}}>
+                                    Hoạt động
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 

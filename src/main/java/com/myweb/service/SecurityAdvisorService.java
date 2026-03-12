@@ -8,7 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.myweb.entity.AuditLog;
 import com.myweb.entity.SecurityEvent;
+import com.myweb.repository.AuditLogRepository;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
 
@@ -23,26 +25,26 @@ public class SecurityAdvisorService {
 
     private final ChatLanguageModel chatModel;
     private final SecurityEventService securityEventService;
+    private final AuditLogRepository auditLogRepository;
+    private final SystemSettingService settingService;
 
     private static final String ADVISOR_SYSTEM_PROMPT = """
-            Bạn là chuyên gia bảo mật AI của phòng LAB bảo mật mạng. Nhiệm vụ:
-
-            1. PHÂN TÍCH các sự kiện bảo mật được cung cấp
-            2. ĐÁNH GIÁ mức độ rủi ro tổng thể
-            3. PHÁT HIỆN các pattern tấn công (brute force, scanning, DDoS, etc.)
-            4. ĐỀ XUẤT biện pháp khắc phục cụ thể
-
-            Quy tắc:
-            - Trả lời bằng tiếng Việt, rõ ràng, có cấu trúc
-            - Sử dụng emoji để đánh dấu mức độ: 🟢 An toàn, 🟡 Cảnh báo, 🟠 Nguy hiểm, 🔴 Nghiêm trọng
-            - Liệt kê ĐỀ XUẤT theo thứ tự ưu tiên
-            - Nếu phát hiện pattern bất thường, mô tả rõ ràng
+            Bạn là CyberShield AI (Chuyên gia phân tích an ninh mạng cấp cao).
+            Quy tắc TỐI THƯỢNG:
+            1. Trả lời bằng tiếng Việt chuyên nghiệp, súc tích. HIỂN THỊ DƯỚI DẠNG MARKDOWN THEO ĐÚNG CẤU TRÚC ĐƯỢC YÊU CẦU.
+            2. VỚI DỮ LIỆU ĐƯỢC CHUYỂN QUA: TUYỆT ĐỐI KHÔNG copy-paste y nguyên dữ liệu thô vào báo cáo. BẠN PHẢI GOM NHÓM (Ví dụ: thay vì liệt kê 10 dòng IP 1.1.1.1, hãy nói 'IP 1.1.1.1 tấn công 10 lần').
+            3. KHÔNG ĐƯỢC LẶP LẠI MỘT CÂU HAY MỘT ĐOẠN VĂN NHIỀU LẦN. Viết ngắn gọn, đi thẳng vào vấn đề.
+            4. Bỏ qua và đánh giá mức độ AN TOÀN (Safe) đối với các IP nội bộ / LAN (192.168.x.x, 127.0.0.1, 0:0:0:0:0:0:0:1) vì đây là môi trường test.
             """;
 
     public SecurityAdvisorService(ChatLanguageModel chatModel,
-            SecurityEventService securityEventService) {
+            SecurityEventService securityEventService,
+            AuditLogRepository auditLogRepository,
+            SystemSettingService settingService) {
         this.chatModel = chatModel;
         this.securityEventService = securityEventService;
+        this.auditLogRepository = auditLogRepository;
+        this.settingService = settingService;
     }
 
     /**
@@ -53,27 +55,62 @@ public class SecurityAdvisorService {
         long startTime = System.currentTimeMillis();
 
         try {
+            // Get Sensitivity setting
+            String sensitivity = settingService.getSettingValue("ai.sensitivity", "MEDIUM");
+            boolean autoResolve = Boolean.parseBoolean(settingService.getSettingValue("ai.auto_resolve", "true"));
+
             // 1. Get event summary
             String eventSummary = securityEventService.buildEventSummaryForAI();
 
             // 2. Get dashboard stats
             Map<String, Object> stats = securityEventService.getDashboardStats();
 
+            // Auto-resolve non-critical events if permitted and no high risks found
+            if (autoResolve) {
+                Long unresolvedLong = (Long) stats.getOrDefault("unresolvedCount", 0L);
+                Long criticalLong = (Long) stats.getOrDefault("criticalCount", 0L);
+
+                int riskScore = (int) stats.getOrDefault("riskScore", 0);
+
+                // If LOW sensitivity or (MEDIUM sensitivity with low risk score) -> trigger
+                // auto resolve
+                if ("LOW".equals(sensitivity) || ("MEDIUM".equals(sensitivity) && riskScore < 30 && criticalLong == 0
+                        && unresolvedLong > 0)) {
+                    securityEventService.autoResolveMinorEvents(); // Note: we'll need to create this method in next
+                                                                   // step
+                    stats = securityEventService.getDashboardStats(); // refresh stats
+                }
+            }
+
+            // Fetch DANGER audit logs
+            List<AuditLog> dangerLogs = auditLogRepository
+                    .findTop20BySeverityOrderByTimestampDesc(AuditLog.Severity.DANGER);
+            StringBuilder dangerLogContext = new StringBuilder();
+            if (!dangerLogs.isEmpty()) {
+                dangerLogContext.append("Logs DANGER:\n");
+                for (AuditLog logData : dangerLogs) {
+                    dangerLogContext.append("- ").append(logData.getIpAddress())
+                            .append(" (").append(logData.getUsername()).append("): ")
+                            .append(logData.getDetails()).append("\n");
+                }
+            }
+
             // 3. Build AI prompt
             String prompt = ADVISOR_SYSTEM_PROMPT + "\n\n"
-                    + eventSummary + "\n\n"
-                    + "Thống kê bổ sung:\n"
-                    + "- Risk Score hiện tại: " + stats.get("riskScore") + "/100\n"
-                    + "- Sự kiện chưa xử lý: " + stats.get("unresolvedCount") + "\n"
-                    + "- Sự kiện CRITICAL: " + stats.get("criticalCount") + "\n"
-                    + "- Sự kiện HIGH: " + stats.get("highCount") + "\n"
-                    + "- Sự kiện trong 1 giờ qua: " + stats.get("eventsLastHour") + "\n\n"
-                    + "Hãy phân tích và đưa ra báo cáo bảo mật bao gồm:\n"
-                    + "1. Đánh giá tổng quan\n"
-                    + "2. Các mối đe dọa đang hoạt động\n"
-                    + "3. Pattern tấn công phát hiện được\n"
-                    + "4. Đề xuất biện pháp ứng phó (theo thứ tự ưu tiên)\n"
-                    + "5. Kết luận và mức cảnh báo\n";
+                    + "=== RAW DATA (CHỈ ĐỌC, KHÔNG ĐƯỢC IN Y NGUYÊN VÀO BÁO CÁO) ===\n"
+                    + "Events Data:\n" + eventSummary + "\n"
+                    + dangerLogContext.toString() + "\n"
+                    + "Stats: Risk Score " + stats.get("riskScore") + "/100, CRITICAL Events: "
+                    + stats.get("criticalCount") + "\n"
+                    + "======================\n\n"
+                    + "LỆNH BẮT BUỘC: Lập Báo cáo Phân tích Mối đe dọa (Threat Intel Report) dựa trên dữ liệu trên. "
+                    + "Lưu ý: Dữ liệu trên có nhiều dòng bị trùng lặp, BẠN PHẢI TỔNG HỢP VÀ GOM NHÓM CHÚNG LẠI (vd: IP A đã tấn công N lần). "
+                    + "TUYỆT ĐỐI KHÔNG lặp lại từ ngữ.\n\n"
+                    + "In báo cáo theo ĐÚNG 3 PHẦN này BẰNG MARKDOWN:\n"
+                    + "### 1. TÌNH TRẠNG CHUNG\n(Đánh giá tổng quan 1-2 câu)\n"
+                    + "### 2. IP ĐÁNG NGỜ NHẤT\n(Liệt kê 1-3 IP nguy hiểm nhất và số lần chúng tấn công, bỏ qua IP nội bộ như 127.0.0.1 và 0:0:0:0:0:0:0:1)\n"
+                    + "### 3. KHUYẾN NGHỊ HÀNH ĐỘNG\n(Đề xuất 2-3 gạch đầu dòng ngắn gọn để xử lý)\n\n"
+                    + "BÁO CÁO CỦA BẠN:";
 
             // 4. Call LLM
             String aiAnalysis = chatModel.generate(prompt);
@@ -111,14 +148,13 @@ public class SecurityAdvisorService {
     public String analyzeEvent(SecurityEvent event) {
         try {
             String prompt = ADVISOR_SYSTEM_PROMPT + "\n\n"
-                    + "Phân tích sự kiện bảo mật sau:\n"
-                    + "- Loại: " + event.getEventType() + "\n"
-                    + "- Mức độ: " + event.getSeverity() + "\n"
-                    + "- Nguồn: " + event.getSource() + "\n"
-                    + "- IP: " + event.getSourceIp() + "\n"
-                    + "- Mô tả: " + event.getDescription() + "\n"
-                    + (event.getRawData() != null ? "- Dữ liệu thô: " + event.getRawData() + "\n" : "")
-                    + "\nHãy phân tích ngắn gọn (3-5 dòng): mức độ nguy hiểm, khả năng tấn công, đề xuất xử lý.";
+                    + "YÊU CẦU LỆNH: Hãy phân tích SỰ KIỆN ĐƠN LẺ dưới đây. Bạn chỉ được trả lời tối đa 3 câu văn ngắn.\n\n"
+                    + "=== EVENT DATA ===\n"
+                    + "Type: " + event.getEventType() + " | Severity: " + event.getSeverity() + "\n"
+                    + "Source IP: " + event.getSourceIp() + "\n"
+                    + "Desc: " + event.getDescription() + "\n"
+                    + "=== END DATA ===\n\n"
+                    + "Phân tích và Đề xuất (Ngắn gọn):";
 
             return chatModel.generate(prompt);
         } catch (Exception e) {
@@ -152,15 +188,33 @@ public class SecurityAdvisorService {
                     .append(e.getDescription()).append(" (")
                     .append(e.getCreatedAt()).append(")\n"));
 
-            String prompt = ADVISOR_SYSTEM_PROMPT + "\n\n"
-                    + sb.toString() + "\n"
-                    + "Tổng số sự kiện từ IP này: " + events.size() + "\n\n"
-                    + "Hãy phân tích IP này:\n"
-                    + "1. Mức độ đe dọa (SAFE/LOW/MEDIUM/HIGH/CRITICAL)\n"
-                    + "2. Loại tấn công nghi ngờ\n"
-                    + "3. Đề xuất xử lý (block, monitor, safe)";
+            // Get Sensitivity setting
+            String sensitivity = settingService.getSettingValue("ai.sensitivity", "MEDIUM");
 
+            // Build simple AI prompt
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append(ADVISOR_SYSTEM_PROMPT).append("\n\n");
+            promptBuilder.append("THÔNG TIN HỆ THỐNG:\n");
+            promptBuilder.append("- Mức độ nhạy báo cáo: ").append(sensitivity).append("\n");
+            promptBuilder.append("- Tổng số sự kiện từ IP này: ").append(events.size()).append("\n\n");
+
+            if ("LOW".equals(sensitivity)) {
+                promptBuilder.append(
+                        "YÊU CẦU: CHỈ BÁO CÁO các sự kiện CRITICAL (Nghiêm trọng) hoặc có hậu quả rõ ràng. BỎ QUA spam.\n");
+            } else if ("HIGH".equals(sensitivity)) {
+                promptBuilder.append("YÊU CẦU: SO SOI KỸ mọi dấu hiệu nhỏ nhất kể cả port scan để cảnh giác.\n");
+            }
+
+            promptBuilder.append("DỮ LIỆU SỰ KIỆN TỪ IP NÀY:\n");
+            promptBuilder.append(sb.toString()).append("\n");
+            promptBuilder.append("CẤU TRÚC BÁO CÁO:\n");
+            promptBuilder.append("## 1. Tóm tắt nhanh\n");
+            promptBuilder.append("## 2. Các Đe dọa Chính (Chỉ liệt kê khi có Lỗi cụ thể)\n");
+            promptBuilder.append("## 3. Khuyến nghị Quản trị Hệ thống\n");
+
+            String prompt = promptBuilder.toString();
             String analysis = chatModel.generate(prompt);
+
             result.put("analysis", analysis);
             result.put("threatLevel", determineThreatLevel(events));
 
@@ -228,5 +282,29 @@ public class SecurityAdvisorService {
 
         sb.append("\n⚠️ *Phân tích tự động (rule-based). Kết nối Ollama để có phân tích AI chi tiết hơn.*");
         return sb.toString();
+    }
+
+    /**
+     * Tự động gọi AI Qwen 2.5 để sinh ra một câu nhận xét về xu hướng dữ liệu Biểu
+     * đồ (BI Insight).
+     */
+    public Map<String, Object> generatePieChartInsight(Map<String, Object> chartData) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        try {
+            String prompt = "Dựa vào dữ liệu thống kê biểu đồ sau đây của hệ thống:\n"
+                    + chartData.toString() + "\n"
+                    + "Hãy đóng vai Lập trình viên AI bảo mật (Qwen2.5) và đưa ra đúng 1 câu nhận xét ngắn gọn (khoảng 10-15 từ) bằng tiếng Việt về xu hướng bảo mật hiện tại, ví dụ: 'Hệ thống đang hoạt động ổn định với tỷ lệ Safe cao.' hoặc 'Cảnh báo: Tỷ lệ Dangerous logs đang có dấu hiệu tăng mạnh.'."
+                    + "\nKhông giải thích gì thêm, chỉ in ra câu trả lời.";
+
+            String insight = chatModel.generate(prompt);
+
+            result.put("insight", insight.replace("\"", "").trim());
+            result.put("status", "OK");
+        } catch (Exception e) {
+            log.error("AI Insight failed: {}", e.getMessage());
+            result.put("insight", "Hệ thống đang theo dõi và tổng hợp số liệu...");
+            result.put("status", "FALLBACK");
+        }
+        return result;
     }
 }

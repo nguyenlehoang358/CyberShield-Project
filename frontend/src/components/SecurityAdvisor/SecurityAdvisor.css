@@ -156,9 +156,62 @@
     opacity: 0.5;
 }
 
-.sa-risk-info { display: flex; flex-direction: column; gap: 4px; }
+.sa-risk-info { display: flex; flex-direction: column; gap: 4px; z-index: 2;}
 .sa-risk-label { font-size: 13px; color: #94a3b8; font-weight: 600; }
 .sa-risk-level { font-size: 18px; font-weight: 700; }
+
+.sa-risk-glow-layer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at right center, rgba(239, 68, 68, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+    border-radius: 16px;
+}
+.sa-risk--safe .sa-risk-glow-layer { background: radial-gradient(circle at right center, rgba(34, 197, 94, 0.15) 0%, transparent 60%); }
+.sa-risk--warning .sa-risk-glow-layer { background: radial-gradient(circle at right center, rgba(234, 179, 8, 0.15) 0%, transparent 60%); }
+.sa-risk--danger .sa-risk-glow-layer { background: radial-gradient(circle at right center, rgba(249, 115, 22, 0.15) 0%, transparent 60%); }
+.sa-risk--critical .sa-risk-glow-layer { background: radial-gradient(circle at right center, rgba(239, 68, 68, 0.15) 0%, transparent 60%); }
+
+/* ── AI Insight Box ── */
+.sa-insight-box {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.sa-insight-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #c4b5fd;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sa-pulse-dot {
+    width: 8px; height: 8px;
+    background: #c4b5fd;
+    border-radius: 50%;
+    animation: sa-pulse 1.5s infinite;
+}
+
+@keyframes sa-pulse {
+    0% { transform: scale(0.9); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.4; }
+    100% { transform: scale(0.9); opacity: 1; }
+}
+
+.sa-insight-body {
+    font-size: 14px;
+    color: #e2e8f0;
+    line-height: 1.6;
+    font-style: italic;
+}
 
 /* ── Stat Grid ── */
 .sa-stat-grid {
@@ -326,6 +379,68 @@
 }
 
 /* ── Events List ── */
+.sa-event-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.sa-filter-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.sa-filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+    min-width: 70px;
+}
+
+.sa-filter-btn {
+    background: rgba(15, 15, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sa-filter-btn:hover { background: rgba(99, 102, 241, 0.1); color: #e2e8f0; }
+.sa-filter-btn.active {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #6366f1;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.sa-filter-btn--resolved.active {
+    background: rgba(74, 222, 128, 0.15);
+    border-color: #4ade80;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+}
+
+.sa-filter-btn--pending.active {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: #fbbf24;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+}
+
+.sa-filter-btn--unresolved.active {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
 .sa-events-list {
     display: flex;
     flex-direction: column;
@@ -504,10 +619,44 @@
     font-weight: 800;
 }
 
+.sa-report-document {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.sa-report-doc-header {
+    background: #161b22;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #30363d;
+}
+
+.sa-doc-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+}
+.sa-doc-dot.red { background: #ff5f56; }
+.sa-doc-dot.yellow { background: #ffbd2e; }
+.sa-doc-dot.green { background: #27c93f; }
+
+.sa-doc-title {
+    margin-left: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #8b949e;
+}
+
 .sa-report-content {
     font-size: 13px;
-    color: #cbd5e1;
+    color: #c9d1d9;
     line-height: 1.7;
+    padding: 24px;
 }
 
 .sa-report-content strong { color: #c4b5fd; }
@@ -571,6 +720,90 @@
 
 @keyframes sa-spin {
     to { transform: rotate(360deg); }
+}
+
+/* ── AI Activity Ticker ── */
+.sa-activity-ticker {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(0, 255, 136, 0.15);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+.sa-activity-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #00ff88;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+    padding-bottom: 8px;
+}
+
+.sa-activity-icon {
+    font-size: 14px;
+}
+
+.sa-activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 130px;
+    overflow-y: auto;
+}
+
+.sa-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #94a3b8;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    animation: saActivityFadeIn 0.4s ease-out;
+}
+
+.sa-activity-item:first-child {
+    color: #e2e8f0;
+    background: rgba(0, 255, 136, 0.06);
+    border-left: 2px solid #00ff88;
+}
+
+.sa-activity-idle {
+    color: #475569;
+    font-style: italic;
+}
+
+.sa-activity-item-icon {
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.sa-activity-item-msg {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sa-activity-item-time {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: #475569;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+@keyframes saActivityFadeIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 /* ── Responsive ── */
