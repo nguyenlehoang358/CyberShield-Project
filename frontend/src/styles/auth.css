@@ -781,36 +781,6 @@
     }
 }
 
-.auth-lang-toggle {
-    position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-full);
-    padding: 0.5rem 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-primary);
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 50;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.auth-lang-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.lang-icon {
-    font-size: 1.15rem;
-}
 
 /* ═══════════════════════════════════════════════
    Terms & Policy Modal — CyberShield SaaS Design
@@ -838,12 +808,10 @@
     width: 100%;
     max-width: 680px;
     max-height: 88vh;
-    background: linear-gradient(170deg, #0f1729 0%, #0a0f1f 100%);
-    border: 1px solid rgba(88, 166, 255, 0.15);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 20px;
-    box-shadow:
-        0 24px 80px rgba(0, 0, 0, 0.6),
-        0 0 40px rgba(88, 166, 255, 0.08);
+    box-shadow: var(--shadow-xl);
     display: flex;
     flex-direction: column;
     animation: termsSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -859,8 +827,8 @@
     padding: 1.75rem 2rem 1.25rem;
     text-align: center;
     position: relative;
-    border-bottom: 1px solid rgba(88, 166, 255, 0.1);
-    background: rgba(88, 166, 255, 0.03);
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-glass);
 }
 
 .terms-modal-icon {
@@ -880,14 +848,14 @@
 .terms-modal-header h2 {
     font-size: 1.25rem;
     font-weight: 800;
-    color: #e2e8f0;
+    color: var(--text-primary);
     margin: 0 0 0.25rem;
     letter-spacing: -0.02em;
 }
 
 .terms-modal-subtitle {
     font-size: 0.8rem;
-    color: #64748b;
+    color: var(--text-secondary);
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -899,10 +867,10 @@
     right: 1rem;
     width: 36px;
     height: 36px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    color: #94a3b8;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
     font-size: 1.25rem;
     cursor: pointer;
     display: flex;
@@ -935,8 +903,8 @@
 .terms-article {
     margin-bottom: 1.5rem;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
     overflow: hidden;
     transition: border-color 0.3s;
 }
@@ -950,8 +918,8 @@
     align-items: center;
     gap: 12px;
     padding: 1rem 1.25rem;
-    background: rgba(88, 166, 255, 0.04);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    background: var(--bg-glass);
+    border-bottom: 1px solid var(--border-light);
 }
 
 .terms-article-num {
@@ -972,7 +940,7 @@
 .terms-article-header h3 {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #e2e8f0;
+    color: var(--text-primary);
     margin: 0;
     line-height: 1.3;
 }
@@ -983,7 +951,7 @@
 
 .terms-article-content p {
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: var(--text-secondary);
     line-height: 1.65;
     margin: 0 0 0.75rem;
 }
@@ -998,7 +966,7 @@
     position: relative;
     padding: 0.4rem 0 0.4rem 1.25rem;
     font-size: 0.83rem;
-    color: #cbd5e1;
+    color: var(--text-primary);
     line-height: 1.5;
 }
 
@@ -1052,7 +1020,7 @@
 
 .terms-footer-info p {
     font-size: 0.75rem;
-    color: #475569;
+    color: var(--text-secondary);
     margin: 0;
 }
 
@@ -1061,8 +1029,8 @@
     display: flex;
     gap: 10px;
     padding: 1.25rem 2rem;
-    border-top: 1px solid rgba(88, 166, 255, 0.1);
-    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid var(--border-light);
+    background: var(--bg-glass);
 }
 
 .terms-accept-btn {
@@ -1090,10 +1058,10 @@
 
 .terms-close-btn {
     padding: 0.85rem 1.75rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
     border-radius: 12px;
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
@@ -1101,8 +1069,8 @@
 }
 
 .terms-close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
 }
 
 /* Responsive Terms Modal */

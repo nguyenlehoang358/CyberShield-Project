@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useLanguage } from '../../context/LanguageContext'
-
+import AIInput from '../../components/common/AIInput'
 /* ──────────────────────────────────────
    BASE64URL HELPERS
    ────────────────────────────────────── */
@@ -335,7 +335,7 @@ export default function JWTLab() {
                     { id: 'security', label: lang === 'vi' ? '🛡️ Bảo mật' : '🛡️ Security' },
                 ].map(tab => (
                     <button key={tab.id} className={`lab-tab ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}>
+                        onClick={() => { setActiveTab(tab.id); window.scrollTo({ top: 0, behavior: 'instant' }); }}>
                         {tab.label}
                     </button>
                 ))}
@@ -359,13 +359,14 @@ export default function JWTLab() {
                             ))}
                         </div>
 
-                        <textarea className="lab-input" value={tokenInput}
+                        <AIInput as="textarea" className="lab-input" value={tokenInput}
                             onChange={e => { setTokenInput(e.target.value); setVerifyResult(null) }}
                             rows={4}
+                            labType="jwt"
                             placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0..."
                             style={{
-                                fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem',
-                                lineHeight: 1.6, resize: 'vertical', width: '100%',
+                                fontSize: '0.78rem',
+                                lineHeight: 1.6, width: '100%',
                                 wordBreak: 'break-all',
                             }} />
 
@@ -460,10 +461,11 @@ export default function JWTLab() {
                                         : 'Enter the secret key to verify signature. If key is correct → signature matches.'}
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <input className="lab-input" value={verifySecret}
+                                    <AIInput className="lab-input" value={verifySecret}
                                         onChange={e => { setVerifySecret(e.target.value); setVerifyResult(null) }}
                                         placeholder={lang === 'vi' ? 'Nhập secret key...' : 'Enter secret key...'}
-                                        style={{ flex: 1, fontFamily: "'JetBrains Mono', monospace", fontSize: '0.82rem' }} />
+                                        labType="jwt"
+                                        style={{ flex: 1, fontSize: '0.82rem' }} />
                                     <button className="lab-btn lab-btn-primary" onClick={verifySignature}>
                                         🔍 {lang === 'vi' ? 'Xác minh' : 'Verify'}
                                     </button>
@@ -591,10 +593,11 @@ export default function JWTLab() {
                     <div className="lab-visual-panel" style={{ borderTop: '3px solid #58a6ff' }}>
                         <h3 className="lab-section-title" style={{ color: '#58a6ff' }}>🔑 Secret Key</h3>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                            <input className="lab-input" value={creatorSecret}
+                            <AIInput className="lab-input" value={creatorSecret}
                                 onChange={e => setCreatorSecret(e.target.value)}
                                 placeholder="your-secret-key"
-                                style={{ flex: 1, fontFamily: "'JetBrains Mono', monospace", fontSize: '0.82rem' }} />
+                                labType="jwt"
+                                style={{ flex: 1, fontSize: '0.82rem' }} />
                             <button className="lab-btn lab-btn-primary" onClick={createJWT}>
                                 🔨 {lang === 'vi' ? 'Tạo JWT' : 'Generate JWT'}
                             </button>

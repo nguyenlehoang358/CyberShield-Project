@@ -124,9 +124,15 @@ function TextReveal({ text, delay = 0, className = '' }) {
 
     useEffect(() => {
         if (!started) return
+        let isMounted = true
         let i = 0
         const timer = setTimeout(() => {
+            if (!isMounted) return;
             const interval = setInterval(() => {
+                if (!isMounted) {
+                    clearInterval(interval)
+                    return;
+                }
                 if (i < text.length) {
                     setDisplayText(text.substring(0, i + 1))
                     i++
@@ -134,9 +140,14 @@ function TextReveal({ text, delay = 0, className = '' }) {
                     clearInterval(interval)
                 }
             }, 35)
-            return () => clearInterval(interval)
+            // Save interval to variable so it can be cleared below if needed
+            window.__revealInterval = interval;
         }, delay)
-        return () => clearTimeout(timer)
+        return () => {
+            isMounted = false
+            clearTimeout(timer)
+            if (window.__revealInterval) clearInterval(window.__revealInterval)
+        }
     }, [started, text, delay])
 
     return (
@@ -170,6 +181,7 @@ function AnimatedCounter({ target, duration = 2000 }) {
 
     useEffect(() => {
         if (!started) return
+        let isMounted = true
         const numericPart = parseInt(target.replace(/[^0-9.]/g, ''))
         const suffix = target.replace(/[0-9.]/g, '')
         const hasDecimal = target.includes('.')
@@ -180,7 +192,10 @@ function AnimatedCounter({ target, duration = 2000 }) {
         }
 
         let startTime = null
+        let animationFrameId = null
+        
         function step(timestamp) {
+            if (!isMounted) return;
             if (!startTime) startTime = timestamp
             const progress = Math.min((timestamp - startTime) / duration, 1)
             // Easing
@@ -189,9 +204,16 @@ function AnimatedCounter({ target, duration = 2000 }) {
                 ? (numericPart * eased).toFixed(1)
                 : Math.floor(numericPart * eased)
             setCount(current + suffix)
-            if (progress < 1) requestAnimationFrame(step)
+            if (progress < 1) {
+                animationFrameId = requestAnimationFrame(step)
+            }
         }
-        requestAnimationFrame(step)
+        animationFrameId = requestAnimationFrame(step)
+        
+        return () => {
+            isMounted = false;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        }
     }, [started, target, duration])
 
     return <span ref={ref}>{count}</span>
@@ -222,18 +244,54 @@ export default function Home() {
 
     // Fetch solutions from API
     useEffect(() => {
+        let isMounted = true;
         const fetchSolutions = async () => {
             try {
-                const res = await axios.get('https://localhost:8443/api/public/solutions')
-                setSolutions(res.data)
+                const currentHost = window.location.hostname;
+                let apiPath = `https://${currentHost}:8443/api/public/solutions`;
+
+                if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+                    apiPath = '/api/public/solutions';
+                } else if (currentHost.includes('ngrok-free.app') || currentHost.includes('ngrok-free.dev')) {
+                    apiPath = import.meta.env.VITE_NGROK_BACKEND_URL ? `${import.meta.env.VITE_NGROK_BACKEND_URL}/public/solutions` : `https://api-${currentHost}/api/public/solutions`;
+                }
+                const res = await axios.get(apiPath, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true',
+                        'bypass-tunnel-reminder': 'true'
+                    }
+                });
+                if (!isMounted) return;
+                
+                const parsedSolutions = res.data.map(s => {
+                    let parsedDetail = null;
+                    let parsedLabs = [];
+                    try {
+                        if (s.detailJson) parsedDetail = JSON.parse(s.detailJson);
+                        if (s.relatedLabsJson) parsedLabs = JSON.parse(s.relatedLabsJson);
+                    } catch (e) {
+                        console.error('Lỗi khi parse JSON của solution:', s.id, e);
+                    }
+                    return {
+                        ...s,
+                        detail: parsedDetail,
+                        relatedLabs: parsedLabs
+                    };
+                });
+                setSolutions(parsedSolutions)
             } catch (err) {
+                if (!isMounted) return;
                 console.error('Failed to load solutions from API:', err)
                 setSolutions([])
             } finally {
-                setSolutionsLoading(false)
+                if (isMounted) setSolutionsLoading(false)
             }
         }
         fetchSolutions()
+        
+        return () => {
+            isMounted = false;
+        }
     }, [])
 
     const steps = [
@@ -342,8 +400,8 @@ export default function Home() {
                             [...Array(3)].map((_, i) => (
                                 <div className="solution-card" key={i} style={{ opacity: 0.4, animation: 'pulse 1.5s infinite' }}>
                                     <div className="solution-card-icon blue"><Zap size={28} /></div>
-                                    <h3 style={{ background: 'rgba(255,255,255,0.05)', height: 20, borderRadius: 6, width: '60%' }}></h3>
-                                    <p style={{ background: 'rgba(255,255,255,0.03)', height: 40, borderRadius: 6 }}></p>
+                                    <h3 style={{ background: 'var(--border-light)', height: 20, borderRadius: 6, width: '60%' }}></h3>
+                                    <p style={{ background: 'var(--border-light)', height: 40, borderRadius: 6 }}></p>
                                 </div>
                             ))
                         ) : solutions.length > 0 ? (

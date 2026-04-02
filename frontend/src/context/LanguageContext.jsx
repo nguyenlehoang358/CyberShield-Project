@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState } from 'react'
+import { ja as jaTranslations } from './translations_ja'
+import { ko as koTranslations } from './translations_ko'
+import { zh as zhTranslations } from './translations_zh'
 
 const LanguageContext = createContext()
 
@@ -14,6 +17,7 @@ const translations = {
         nav_news: 'BLOG & TIN TỨC',
         nav_recruitment: 'TUYỂN DỤNG',
         nav_login: 'Đăng nhập',
+        nav_profile: 'Trang cá nhân',
         nav_dashboard: 'Bảng điều khiển',
         nav_logout: 'Đăng xuất',
         nav_intro: 'Giới thiệu',
@@ -276,6 +280,11 @@ const translations = {
         about_role_cto: 'Giám đốc công nghệ (CTO)',
         about_role_architect: 'Kiến trúc sư trưởng',
         about_role_design: 'Trưởng nhóm thiết kế',
+        about_cta_title: 'Nâng Tầm Bảo Mật Số Của Bạn',
+        about_cta_highlight: 'CyberShield',
+        about_cta_desc: 'Chúng tôi cung cấp các giải pháp an ninh mạng tiên tiến để bảo vệ tương lai số của bạn.',
+        about_cta_contact: 'Liên hệ ngay',
+        about_cta_lab: 'Khám phá Lab',
         about_cta_ready: 'Sẵn sàng chuyển đổi doanh nghiệp?',
         about_cta_text: 'Hãy cùng thảo luận cách chúng tôi có thể giúp bạn xây dựng tương lai được hàng triệu người sử dụng.',
         about_cta_btn: 'Bắt đầu ngay',
@@ -325,7 +334,7 @@ const translations = {
         contact_faq_2_q: 'Bạn có hỗ trợ 24/7 không?',
         contact_faq_2_a: 'Gói doanh nghiệp bao gồm hỗ trợ khẩn cấp 24/7.',
         contact_faq_3_q: 'Văn phòng ở đâu?',
-        contact_faq_3_a: 'Trụ sở chính tại TP.HCM, Việt Nam.',
+        contact_faq_3_a: '66 Võ Văn Tần, Đà Nẵng.',
         contact_support_hours: 'Giờ hỗ trợ',
 
         // Admin Dashboard
@@ -413,6 +422,49 @@ const translations = {
         mfa_verify_desc: 'Nhập mã 6 chữ số từ ứng dụng Authenticator của bạn',
         mfa_cancel: 'Hủy / Về Đăng nhập',
         mfa_error_invalid: 'Mã xác thực không hợp lệ',
+
+        // Password Strength Meter
+        pwd_str_very_weak: 'Rất yếu', pwd_str_weak: 'Yếu', pwd_str_fair: 'Tạm được', pwd_str_good: 'Mạnh', pwd_str_excellent: 'Rất mạnh',
+        pwd_str_label: 'Độ mạnh',
+        pwd_check_length: 'Độ dài: {n} ký tự', pwd_check_lower: 'Chữ thường (a-z)', pwd_check_upper: 'Chữ hoa (A-Z)', pwd_check_digit: 'Số (0-9)', pwd_check_special: 'Ký tự đặc biệt (!@#$)', pwd_check_common: 'Không phải mật khẩu phổ biến',
+        pwd_warn_numeric: 'Chỉ có số', pwd_warn_alpha: 'Chỉ có chữ', pwd_warn_repeat: 'Ký tự lặp lại',
+
+        // Terms Modal
+        terms_modal_title: 'Điều khoản Dịch vụ & Chính sách Bảo mật',
+        terms_art1_title: 'Chấp thuận giám sát an ninh bằng AI',
+        terms_art1_desc: 'Bằng việc sử dụng nền tảng CyberShield, bạn đồng ý cho phép hệ thống Trí tuệ Nhân tạo (AI) giám sát và phân tích các hoạt động truy cập để phát hiện hành vi bất thường, bao gồm nhưng không giới hạn:',
+        terms_art1_li1: 'Phân tích payload đầu vào để phát hiện SQL Injection và XSS.',
+        terms_art1_li2: 'Phát hiện hành vi đăng nhập bất thường (brute force, credential stuffing).',
+        terms_art1_li3: 'Tự động chặn IP vi phạm thông qua cơ chế SOAR (Security Orchestration, Automation and Response).',
+        terms_art1_li4: 'Sử dụng mô hình Machine Learning (Isolation Forest, TF-IDF) để đánh giá rủi ro theo thời gian thực.',
+        terms_art2_title: 'Thu thập và xử lý địa chỉ IP',
+        terms_art2_desc: 'Hệ thống CyberShield thu thập và lưu trữ vĩnh viễn các thông tin sau phục vụ mục đích bảo mật và huấn luyện mô hình AI:',
+        terms_art2_li1: 'Địa chỉ IP (IPv4/IPv6) của mọi lần đăng nhập (thành công hoặc thất bại).',
+        terms_art2_li2: 'Thời gian truy cập (timestamp) chính xác đến giây.',
+        terms_art2_li3: 'User-Agent trình duyệt, lý do thất bại, và trạng thái chặn.',
+        terms_art2_li4: 'Dữ liệu được mã hóa AES-256 khi lưu trữ (encryption at rest) và truyền tải qua HTTPS.',
+        terms_art2_note: 'Dữ liệu IP được lưu trữ vĩnh viễn trong PostgreSQL để xây dựng dataset huấn luyện AI. Bạn có quyền yêu cầu xóa dữ liệu cá nhân theo quy định GDPR.',
+        terms_art3_title: 'Giới hạn trách nhiệm pháp lý',
+        terms_art3_desc: 'CyberShield được cung cấp dưới dạng "NGUYÊN TRẠNG" (AS-IS) cho mục đích nghiên cứu và học thuật tại phòng LAB Bảo mật Mạng. Chúng tôi không chịu trách nhiệm về:',
+        terms_art3_li1: 'Thiệt hại phát sinh từ việc IP bị chặn tự động bởi hệ thống AI SOAR.',
+        terms_art3_li2: 'Gián đoạn dịch vụ do bảo trì hệ thống hoặc cập nhật mô hình AI.',
+        terms_art3_li3: 'Kết quả phân tích sai (false positive/negative) của mô hình Machine Learning.',
+        terms_art3_warning: 'Vi phạm chính sách bảo mật (brute force, injection attacks) sẽ dẫn đến việc IP bị chặn tự động từ 1 phút đến 24 giờ tùy mức độ vi phạm.',
+        terms_last_updated: '📅 Cập nhật lần cuối: Tháng 3, 2026 — Phiên bản 2.0',
+        terms_accept: 'Tôi đã đọc và đồng ý',
+        terms_close: 'Đóng',
+
+        // Error handling (login)
+        err_network_safari: '🛡️ Lỗi mạng. Nếu dùng iPhone/Safari, hãy truy cập trực tiếp https://{host}:8443 và nhấn "Tiếp tục truy cập (Trust)" để xác nhận chứng chỉ trước khi đăng nhập.',
+        err_ip_blocked: 'IP đã bị khóa. Vui lòng chờ {time}.',
+        err_login_attempts: 'Đăng nhập thất bại. Còn {n} lần thử trước khi bị khóa.',
+        err_wrong_credentials: 'Email hoặc mật khẩu không đúng. Còn {n} lần thử.',
+        err_emergency_success: 'Khẩn cấp: IP của bạn đã được bỏ chặn. Hãy thử đăng nhập lại!',
+        err_emergency_fail: 'Lỗi bỏ chặn. Có thể do chứng chỉ SSL. Hãy truy cập trực tiếp Backend trước.',
+
+        // Home & Admin Ext
+        sol_concept: 'Khái niệm', sol_usage: 'Cách sử dụng', sol_application: 'Ứng dụng', sol_related_labs: 'Các bài Lab liên quan:', sol_no_data: 'Chưa có giải pháp nào. Hãy thêm từ Admin Panel.',
+        admin_sys_overview: 'Tổng quan hệ thống', admin_db_manager: 'Cơ sở dữ liệu', admin_user_mgr: 'Quản lý người dùng', admin_sol_mgr: 'Quản lý Giải pháp', admin_sys_sec: 'Bảo mật hệ thống', admin_sys_settings: 'Cấu hình Hệ thống', admin_blocked_ips: 'Tổng số IP bị chặn', admin_auth_failures: 'Lỗi đăng nhập / Brute force', admin_view_logs: 'Xem nhật ký đầy đủ', admin_load_err: 'Không thể tải dữ liệu', admin_ai_advisor: 'AI Security Advisor',
     },
     en: {
         // Navbar
@@ -425,6 +477,7 @@ const translations = {
         nav_news: 'BLOG & NEWS',
         nav_recruitment: 'RECRUITMENT',
         nav_login: 'Login',
+        nav_profile: 'Profile',
         nav_dashboard: 'Dashboard',
         nav_logout: 'Logout',
         nav_intro: 'Introduction',
@@ -687,6 +740,11 @@ const translations = {
         about_role_cto: 'CTO',
         about_role_architect: 'Lead Architect',
         about_role_design: 'Head of Design',
+        about_cta_title: 'Elevate Your Digital Security',
+        about_cta_highlight: 'CyberShield',
+        about_cta_desc: 'We provide advanced cybersecurity solutions to protect your digital future.',
+        about_cta_contact: 'Contact Us Now',
+        about_cta_lab: 'Explore Lab',
         about_cta_ready: 'Ready to Transform Your Business?',
         about_cta_text: 'Let\'s discuss how we can help you build the future used by millions.',
         about_cta_btn: 'Get Started Now',
@@ -736,7 +794,7 @@ const translations = {
         contact_faq_2_q: 'Do you offer 24/7 support?',
         contact_faq_2_a: 'Enterprise plans include 24/7 emergency support.',
         contact_faq_3_q: 'Where are you located?',
-        contact_faq_3_a: 'Our HQ is in Ho Chi Minh City, Vietnam.',
+        contact_faq_3_a: '66 Vo Van Tan, Da Nang.',
         contact_support_hours: 'Support Hours',
 
         // Admin Dashboard
@@ -816,15 +874,65 @@ const translations = {
         auth_error_email_format: 'Invalid email format',
         auth_error_password_length: 'Password must be at least 8 characters',
         auth_error_terms_required: 'You must agree to the Terms of Service and Privacy Policy.',
-    }
+
+        // Password Strength Meter
+        pwd_str_very_weak: 'Very Weak', pwd_str_weak: 'Weak', pwd_str_fair: 'Fair', pwd_str_good: 'Good', pwd_str_excellent: 'Excellent',
+        pwd_str_label: 'Strength',
+        pwd_check_length: 'Length: {n} chars', pwd_check_lower: 'Lowercase (a-z)', pwd_check_upper: 'Uppercase (A-Z)', pwd_check_digit: 'Numbers (0-9)', pwd_check_special: 'Special chars (!@#$)', pwd_check_common: 'Not a common password',
+        pwd_warn_numeric: 'Numbers only', pwd_warn_alpha: 'Letters only', pwd_warn_repeat: 'Repeated character',
+
+        // Terms Modal
+        terms_modal_title: 'Terms of Service & Privacy Policy',
+        terms_art1_title: 'Consent to AI Security Monitoring',
+        terms_art1_desc: 'By using the CyberShield platform, you consent to Artificial Intelligence (AI) systems monitoring and analyzing access activities to detect anomalous behavior, including but not limited to:',
+        terms_art1_li1: 'Analyzing input payloads to detect SQL Injection and XSS.',
+        terms_art1_li2: 'Detecting anomalous login behavior (brute force, credential stuffing).',
+        terms_art1_li3: 'Automatically blocking offending IPs via SOAR (Security Orchestration, Automation and Response) mechanisms.',
+        terms_art1_li4: 'Using Machine Learning models (Isolation Forest, TF-IDF) for real-time risk assessment.',
+        terms_art2_title: 'IP Address Collection & Processing',
+        terms_art2_desc: 'CyberShield permanently collects and stores the following information for security purposes and AI model training:',
+        terms_art2_li1: 'IP addresses (IPv4/IPv6) of every login attempt (successful or failed).',
+        terms_art2_li2: 'Access timestamps accurate to the second.',
+        terms_art2_li3: 'Browser User-Agent, failure reasons, and blocking status.',
+        terms_art2_li4: 'Data is encrypted with AES-256 at rest and transmitted via HTTPS.',
+        terms_art2_note: 'IP data is permanently stored in PostgreSQL for AI training datasets. You have the right to request personal data deletion under GDPR regulations.',
+        terms_art3_title: 'Limitation of Liability',
+        terms_art3_desc: 'CyberShield is provided "AS-IS" for research and academic purposes at the Cybersecurity LAB. We are not responsible for:',
+        terms_art3_li1: 'Damages arising from IPs automatically blocked by the AI SOAR system.',
+        terms_art3_li2: 'Service interruptions due to system maintenance or AI model updates.',
+        terms_art3_li3: 'Incorrect analysis results (false positive/negative) from Machine Learning models.',
+        terms_art3_warning: 'Violating security policies (brute force, injection attacks) will result in automatic IP blocking from 1 minute to 24 hours depending on severity.',
+        terms_last_updated: '📅 Last updated: March 2026 — Version 2.0',
+        terms_accept: 'I have read and agree',
+        terms_close: 'Close',
+
+        // Error handling (login)
+        err_network_safari: '🛡️ Network Error. On iPhone/Safari, please visit https://{host}:8443 directly and click "Trust" to accept the certificate before logging in.',
+        err_ip_blocked: 'IP has been blocked. Please wait {time}.',
+        err_login_attempts: 'Login failed. {n} attempts remaining before lockout.',
+        err_wrong_credentials: 'Wrong email or password. {n} attempts remaining.',
+        err_emergency_success: 'Emergency: Your IP has been unblocked. Please try logging in again!',
+        err_emergency_fail: 'Unblock failed. May be due to SSL certificate. Please visit Backend directly first.',
+
+        // Home & Admin Ext
+        sol_concept: 'Concept', sol_usage: 'Usage', sol_application: 'Application', sol_related_labs: 'Related Labs:', sol_no_data: 'No solutions yet. Add from Admin Panel.',
+        admin_sys_overview: 'System Overview', admin_db_manager: 'Database Manager', admin_user_mgr: 'User Management', admin_sol_mgr: 'Solutions Management', admin_sys_sec: 'System Security', admin_sys_settings: 'System Settings', admin_blocked_ips: 'Blocked IPs', admin_auth_failures: 'Failed Logins / Brute Force', admin_view_logs: 'View Full Logs', admin_load_err: 'Failed to load dashboard data', admin_ai_advisor: 'AI Security Advisor',
+    },
+    ja: jaTranslations,
+    ko: koTranslations,
+    zh: zhTranslations,
 }
 
 export function LanguageProvider({ children }) {
     const [lang, setLang] = useState('vi')
 
-    const t = (key) => translations[lang]?.[key] || key
+    const t = (key) => translations[lang]?.[key] || translations['en']?.[key] || key
 
-    const toggleLang = () => setLang(prev => prev === 'vi' ? 'en' : 'vi')
+    const toggleLang = () => {
+        const langs = ['vi', 'en', 'ja', 'ko', 'zh'];
+        const idx = langs.indexOf(lang);
+        setLang(langs[(idx + 1) % langs.length]);
+    }
 
     return (
         <LanguageContext.Provider value={{ lang, setLang, toggleLang, t }}>

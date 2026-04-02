@@ -61,71 +61,60 @@ function analyzePassword(password) {
 }
 
 /* ── Password Strength Meter Component ── */
-function PasswordStrengthMeter({ password, lang }) {
+function PasswordStrengthMeter({ password, lang, t }) {
     const analysis = useMemo(() => analyzePassword(password), [password])
-    if (!analysis) return null
+    if (!password || !analysis) return null
 
-    const strengthLabels = {
-        vi: { very_weak: 'Rất yếu', weak: 'Yếu', fair: 'Tạm được', good: 'Mạnh', excellent: 'Rất mạnh' },
-        en: { very_weak: 'Very Weak', weak: 'Weak', fair: 'Fair', good: 'Good', excellent: 'Excellent' },
+    const strengthKeys = {
+        very_weak: 'pwd_str_very_weak', weak: 'pwd_str_weak', fair: 'pwd_str_fair', good: 'pwd_str_good', excellent: 'pwd_str_excellent'
     }
 
-    const checkItems = [
-        { ok: analysis.checks.length >= 8, label: lang === 'vi' ? `Độ dài: ${analysis.checks.length} ký tự` : `Length: ${analysis.checks.length} chars` },
-        { ok: analysis.checks.hasLower, label: lang === 'vi' ? 'Chữ thường (a-z)' : 'Lowercase (a-z)' },
-        { ok: analysis.checks.hasUpper, label: lang === 'vi' ? 'Chữ hoa (A-Z)' : 'Uppercase (A-Z)' },
-        { ok: analysis.checks.hasDigit, label: lang === 'vi' ? 'Số (0-9)' : 'Numbers (0-9)' },
-        { ok: analysis.checks.hasSpecial, label: lang === 'vi' ? 'Ký tự đặc biệt (!@#$)' : 'Special chars (!@#$)' },
-        { ok: !analysis.isCommon, bad: analysis.isCommon, label: lang === 'vi' ? 'Không phải mật khẩu phổ biến' : 'Not a common password' },
-    ]
+    // Determine simple color based on score for a single progress bar
+    let simpleColor = '#f85149'; // Red (Weak)
+    if (analysis.score >= 80) simpleColor = '#3fb950'; // Green (Strong)
+    else if (analysis.score >= 40) simpleColor = '#d29922'; // Yellow (Fair)
 
-    const warningLabels = {
-        numeric: lang === 'vi' ? 'Chỉ có số' : 'Numbers only',
-        alpha: lang === 'vi' ? 'Chỉ có chữ' : 'Letters only',
-        repeat: lang === 'vi' ? 'Ký tự lặp lại' : 'Repeated character',
-    }
+    // Dynamic suggestions based on missing checks
+    const suggestions = [];
+    if (analysis.checks.length < 8) suggestions.push(t('pwd_check_length').replace('{n}', 8));
+    if (!analysis.checks.hasUpper) suggestions.push(t('pwd_check_upper'));
+    if (!analysis.checks.hasLower) suggestions.push(t('pwd_check_lower'));
+    if (!analysis.checks.hasDigit) suggestions.push(t('pwd_check_digit'));
+    if (!analysis.checks.hasSpecial) suggestions.push(t('pwd_check_special'));
+    if (analysis.isCommon) suggestions.push(t('pwd_check_common'));
 
     return (
-        <div className="password-strength-meter">
-            {/* Header */}
-            <div className="strength-header">
-                <span className="strength-label">
-                    💪 {lang === 'vi' ? 'Độ mạnh' : 'Strength'}
-                </span>
-                <span className="strength-value" style={{ color: analysis.strengthColor }}>
-                    {analysis.score}% — {strengthLabels[lang][analysis.strength]}
-                </span>
+        <div className="password-strength-simple" style={{ marginTop: '0.25rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
+                <span>💪 {t('pwd_str_label')}</span>
+                <span style={{ color: simpleColor, fontWeight: '700' }}>{analysis.score}% — {t(strengthKeys[analysis.strength])}</span>
             </div>
-
-            {/* Progress bar */}
-            <div className="strength-bar-track">
-                <div
-                    className="strength-bar-fill"
-                    style={{
-                        width: `${analysis.score}%`,
-                        background: `linear-gradient(90deg, ${analysis.strengthColor}, ${analysis.score > 60 ? '#58a6ff' : analysis.strengthColor})`,
-                        boxShadow: `0 0 12px ${analysis.strengthColor}40`,
-                    }}
-                />
+            
+            <div style={{ height: '6px', width: '100%', backgroundColor: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{
+                    height: '100%',
+                    width: `${Math.max(5, analysis.score)}%`,
+                    backgroundColor: simpleColor,
+                    transition: 'all 0.4s ease'
+                }} />
             </div>
-
-            {/* Checklist */}
-            <div className="strength-checklist">
-                {checkItems.map((item, i) => (
-                    <div key={i} className={`strength-check-item ${item.bad ? 'bad' : item.ok ? 'ok' : ''}`}>
-                        <span className="check-icon">{item.bad ? '❌' : item.ok ? '✅' : '○'}</span>
-                        {item.label}
-                    </div>
-                ))}
-            </div>
-
-            {/* Pattern warnings */}
-            {analysis.patterns.length > 0 && (
-                <div className="strength-warnings">
-                    {analysis.patterns.map((p, i) => (
-                        <div key={i} className="strength-warning-item">
-                            ⚠️ {warningLabels[p] || p}
-                        </div>
+            
+            {suggestions.length > 0 && analysis.score < 100 && (
+                <div style={{ marginTop: '0.6rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {suggestions.slice(0, 3).map((s, i) => (
+                        <span key={i} style={{ 
+                            backgroundColor: 'var(--bg-card-hover)', 
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-secondary)',
+                            padding: '3px 8px', 
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}>
+                            <i className='bx bx-info-circle'></i> {s}
+                        </span>
                     ))}
                 </div>
             )}
@@ -142,7 +131,8 @@ export default function AuthPage() {
     const { lang, toggleLang, t } = useLanguage()
 
     const handleSocialLogin = (provider) => {
-        window.location.href = `https://localhost:8443/oauth2/authorization/${provider}`
+        const currentHost = window.location.hostname
+        window.location.href = `https://${currentHost}:8443/oauth2/authorization/${provider}`
     }
 
     // Login State
@@ -213,26 +203,25 @@ export default function AuthPage() {
                 navigate(getRedirectPath(res.roles))
             }
         } catch (err) {
+            if (err.message === 'Network Error') {
+                const currentHost = window.location.hostname
+                toast.error(t('err_network_safari').replace('{host}', currentHost), { duration: 10000 });
+                return;
+            }
             const data = err.response?.data
             if (data?.blocked) {
                 // IP is blocked — show countdown
                 const remaining = data.remainingSeconds || 0
-                const timeStr = remaining >= 3600 ? `${Math.floor(remaining / 3600)} giờ`
-                    : remaining >= 60 ? `${Math.floor(remaining / 60)} phút`
-                        : `${remaining} giây`
-                toast.error(`🚫 ${data.error || (lang === 'vi'
-                    ? `IP đã bị khóa. Vui lòng chờ ${timeStr}.`
-                    : `IP has been blocked. Please wait ${timeStr}.`)}`)
+                const timeStr = remaining >= 3600 ? (lang === 'vi' ? `${Math.floor(remaining / 3600)} giờ` : `${Math.floor(remaining / 3600)}h`)
+                    : remaining >= 60 ? (lang === 'vi' ? `${Math.floor(remaining / 60)} phút` : `${Math.floor(remaining / 60)}m`)
+                        : (lang === 'vi' ? `${remaining} giây` : `${remaining}s`)
+                toast.error(`🚫 ${data.error || t('err_ip_blocked').replace('{time}', timeStr)}`)
             } else if (data?.captchaRequired) {
                 const attemptsLeft = data.attemptsRemaining || 0
-                toast.error(lang === 'vi'
-                    ? `⚠️ Đăng nhập thất bại. Còn ${attemptsLeft} lần thử trước khi bị khóa.`
-                    : `⚠️ Login failed. ${attemptsLeft} attempts remaining before lockout.`)
+                toast.error(`⚠️ ${t('err_login_attempts').replace('{n}', attemptsLeft)}`)
             } else if (data?.failureCount) {
                 const attemptsLeft = data.attemptsRemaining || 0
-                toast.error(lang === 'vi'
-                    ? `❌ Email hoặc mật khẩu không đúng. Còn ${attemptsLeft} lần thử.`
-                    : `❌ Wrong email or password. ${attemptsLeft} attempts remaining.`)
+                toast.error(`❌ ${t('err_wrong_credentials').replace('{n}', attemptsLeft)}`)
             } else {
                 const errorMsg = data?.error || err.response?.data?.message || err.message || t('auth_login_failed')
                 toast.error(errorMsg)
@@ -270,6 +259,11 @@ export default function AuthPage() {
             toast.success(t('auth_welcome_back') || 'Registration successful!')
             navigate('/')
         } catch (err) {
+            if (err.message === 'Network Error') {
+                const currentHost = window.location.hostname
+                toast.error(t('err_network_safari').replace('{host}', currentHost), { duration: 10000 });
+                return;
+            }
             const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || t('auth_register_failed')
             toast.error(errorMsg)
         }
@@ -312,6 +306,26 @@ export default function AuthPage() {
         }
         setForgotError('')
         switchViewMode('reset')
+    }
+
+    const handleEmergencyUnblock = async () => {
+        try {
+            const currentHost = window.location.hostname;
+            let baseUrl = `https://${currentHost}:8443`;
+            if (currentHost.includes('ngrok-free') || currentHost.includes('ngrok-free.dev')) {
+                baseUrl = import.meta.env.VITE_NGROK_BACKEND_URL || `https://api-${currentHost}/api`;
+                if (baseUrl.endsWith('/api')) baseUrl = baseUrl.replace(/\/api$/, '');
+            }
+            await fetch(`${baseUrl}/api/public/emergency-unblock`, {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true',
+                    'bypass-tunnel-reminder': 'true'
+                }
+            });
+            toast.success("Khẩn cấp: IP của bạn đã được bỏ chặn. Hãy thử đăng nhập lại!", { duration: 6000 });
+        } catch (e) {
+            toast.error("Lỗi bỏ chặn. Có thể do chứng chỉ SSL. Hãy truy cập trực tiếp Backend trước.", { duration: 5000 });
+        }
     }
 
     const handleResetPassword = async (e) => {
@@ -383,7 +397,7 @@ export default function AuthPage() {
     const LangToggle = () => (
         <button className="auth-lang-toggle" onClick={toggleLang} aria-label="Toggle language" id="auth-lang-toggle-btn">
             <span className="lang-icon">🌐</span>
-            {lang === 'vi' ? 'EN' : 'VI'}
+            {lang.toUpperCase()}
         </button>
     )
 
@@ -564,119 +578,101 @@ export default function AuthPage() {
             <Link to="/" className="back-home"><i className='bx bx-arrow-back'></i> {t('auth_back_home')}</Link>
             <LangToggle />
 
-            {/* ═══ TERMS & POLICY MODAL ═══ */}
-            {isTermsModalOpen && (
-                <div className="terms-modal-overlay" onClick={() => setIsTermsModalOpen(false)}>
-                    <div className="terms-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="terms-modal-header">
-                            <div className="terms-modal-icon">
-                                <i className='bx bx-shield-quarter'></i>
-                            </div>
-                            <h2>{lang === 'vi' ? 'Điều khoản Dịch vụ & Chính sách Bảo mật' : 'Terms of Service & Privacy Policy'}</h2>
-                            <p className="terms-modal-subtitle">CyberShield Security Platform</p>
-                            <button className="terms-modal-close" onClick={() => setIsTermsModalOpen(false)}>
-                                <i className='bx bx-x'></i>
-                            </button>
+        {/* ═══ TERMS & POLICY MODAL ═══ */}
+        {isTermsModalOpen && (
+            <div className="terms-modal-overlay" onClick={() => setIsTermsModalOpen(false)}>
+                <div className="terms-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="terms-modal-header">
+                        <div className="terms-modal-icon">
+                            <i className='bx bx-shield-quarter'></i>
                         </div>
-                        <div className="terms-modal-body">
-                            {/* Điều 1 */}
-                            <div className="terms-article">
-                                <div className="terms-article-header">
-                                    <span className="terms-article-num">01</span>
-                                    <h3>{lang === 'vi' ? 'Chấp thuận giám sát an ninh bằng AI' : 'Consent to AI Security Monitoring'}</h3>
-                                </div>
-                                <div className="terms-article-content">
-                                    <p>{lang === 'vi'
-                                        ? 'Bằng việc sử dụng nền tảng CyberShield, bạn đồng ý cho phép hệ thống Trí tuệ Nhân tạo (AI) giám sát và phân tích các hoạt động truy cập để phát hiện hành vi bất thường, bao gồm nhưng không giới hạn:'
-                                        : 'By using the CyberShield platform, you consent to Artificial Intelligence (AI) systems monitoring and analyzing access activities to detect anomalous behavior, including but not limited to:'}
-                                    </p>
-                                    <ul>
-                                        <li>{lang === 'vi' ? 'Phân tích payload đầu vào để phát hiện SQL Injection và XSS.' : 'Analyzing input payloads to detect SQL Injection and XSS.'}</li>
-                                        <li>{lang === 'vi' ? 'Phát hiện hành vi đăng nhập bất thường (brute force, credential stuffing).' : 'Detecting anomalous login behavior (brute force, credential stuffing).'}</li>
-                                        <li>{lang === 'vi' ? 'Tự động chặn IP vi phạm thông qua cơ chế SOAR (Security Orchestration, Automation and Response).' : 'Automatically blocking offending IPs via SOAR (Security Orchestration, Automation and Response) mechanisms.'}</li>
-                                        <li>{lang === 'vi' ? 'Sử dụng mô hình Machine Learning (Isolation Forest, TF-IDF) để đánh giá rủi ro theo thời gian thực.' : 'Using Machine Learning models (Isolation Forest, TF-IDF) for real-time risk assessment.'}</li>
-                                    </ul>
-                                </div>
+                        <h2>{t('terms_modal_title')}</h2>
+                        <p className="terms-modal-subtitle">CyberShield Security Platform</p>
+                        <button className="terms-modal-close" onClick={() => setIsTermsModalOpen(false)}>
+                            <i className='bx bx-x'></i>
+                        </button>
+                    </div>
+                    <div className="terms-modal-body">
+                        {/* Điều 1 */}
+                        <div className="terms-article">
+                            <div className="terms-article-header">
+                                <span className="terms-article-num">01</span>
+                                <h3>{t('terms_art1_title')}</h3>
                             </div>
-
-                            {/* Điều 2 */}
-                            <div className="terms-article">
-                                <div className="terms-article-header">
-                                    <span className="terms-article-num">02</span>
-                                    <h3>{lang === 'vi' ? 'Thu thập và xử lý địa chỉ IP' : 'IP Address Collection & Processing'}</h3>
-                                </div>
-                                <div className="terms-article-content">
-                                    <p>{lang === 'vi'
-                                        ? 'Hệ thống CyberShield thu thập và lưu trữ vĩnh viễn các thông tin sau phục vụ mục đích bảo mật và huấn luyện mô hình AI:'
-                                        : 'CyberShield permanently collects and stores the following information for security purposes and AI model training:'}
-                                    </p>
-                                    <ul>
-                                        <li>{lang === 'vi' ? 'Địa chỉ IP (IPv4/IPv6) của mọi lần đăng nhập (thành công hoặc thất bại).' : 'IP addresses (IPv4/IPv6) of every login attempt (successful or failed).'}</li>
-                                        <li>{lang === 'vi' ? 'Thời gian truy cập (timestamp) chính xác đến giây.' : 'Access timestamps accurate to the second.'}</li>
-                                        <li>{lang === 'vi' ? 'User-Agent trình duyệt, lý do thất bại, và trạng thái chặn.' : 'Browser User-Agent, failure reasons, and blocking status.'}</li>
-                                        <li>{lang === 'vi' ? 'Dữ liệu được mã hóa AES-256 khi lưu trữ (encryption at rest) và truyền tải qua HTTPS.' : 'Data is encrypted with AES-256 at rest and transmitted via HTTPS.'}</li>
-                                    </ul>
-                                    <div className="terms-highlight">
-                                        <i className='bx bx-info-circle'></i>
-                                        <span>{lang === 'vi'
-                                            ? 'Dữ liệu IP được lưu trữ vĩnh viễn trong PostgreSQL để xây dựng dataset huấn luyện AI. Bạn có quyền yêu cầu xóa dữ liệu cá nhân theo quy định GDPR.'
-                                            : 'IP data is permanently stored in PostgreSQL for AI training datasets. You have the right to request personal data deletion under GDPR regulations.'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Điều 3 */}
-                            <div className="terms-article">
-                                <div className="terms-article-header">
-                                    <span className="terms-article-num">03</span>
-                                    <h3>{lang === 'vi' ? 'Giới hạn trách nhiệm pháp lý' : 'Limitation of Liability'}</h3>
-                                </div>
-                                <div className="terms-article-content">
-                                    <p>{lang === 'vi'
-                                        ? 'CyberShield được cung cấp dưới dạng "NGUYÊN TRẠNG" (AS-IS) cho mục đích nghiên cứu và học thuật tại phòng LAB Bảo mật Mạng. Chúng tôi không chịu trách nhiệm về:'
-                                        : 'CyberShield is provided "AS-IS" for research and academic purposes at the Cybersecurity LAB. We are not responsible for:'}
-                                    </p>
-                                    <ul>
-                                        <li>{lang === 'vi' ? 'Thiệt hại phát sinh từ việc IP bị chặn tự động bởi hệ thống AI SOAR.' : 'Damages arising from IPs automatically blocked by the AI SOAR system.'}</li>
-                                        <li>{lang === 'vi' ? 'Gián đoạn dịch vụ do bảo trì hệ thống hoặc cập nhật mô hình AI.' : 'Service interruptions due to system maintenance or AI model updates.'}</li>
-                                        <li>{lang === 'vi' ? 'Kết quả phân tích sai (false positive/negative) của mô hình Machine Learning.' : 'Incorrect analysis results (false positive/negative) from Machine Learning models.'}</li>
-                                    </ul>
-                                    <div className="terms-highlight terms-highlight--warning">
-                                        <i className='bx bx-error'></i>
-                                        <span>{lang === 'vi'
-                                            ? 'Vi phạm chính sách bảo mật (brute force, injection attacks) sẽ dẫn đến việc IP bị chặn tự động từ 1 phút đến 24 giờ tùy mức độ vi phạm.'
-                                            : 'Violating security policies (brute force, injection attacks) will result in automatic IP blocking from 1 minute to 24 hours depending on severity.'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="terms-footer-info">
-                                <p>{lang === 'vi'
-                                    ? '📅 Cập nhật lần cuối: Tháng 3, 2026 — Phiên bản 2.0'
-                                    : '📅 Last updated: March 2026 — Version 2.0'}
-                                </p>
+                            <div className="terms-article-content">
+                                <p>{t('terms_art1_desc')}</p>
+                                <ul>
+                                    <li>{t('terms_art1_li1')}</li>
+                                    <li>{t('terms_art1_li2')}</li>
+                                    <li>{t('terms_art1_li3')}</li>
+                                    <li>{t('terms_art1_li4')}</li>
+                                </ul>
                             </div>
                         </div>
-                        <div className="terms-modal-footer">
-                            <button
-                                className="terms-accept-btn"
-                                onClick={() => { setTermsAccepted(true); setIsTermsModalOpen(false) }}
-                            >
-                                <i className='bx bx-check-shield'></i>
-                                {lang === 'vi' ? 'Tôi đã đọc và đồng ý' : 'I have read and agree'}
-                            </button>
-                            <button
-                                className="terms-close-btn"
-                                onClick={() => setIsTermsModalOpen(false)}
-                            >
-                                {lang === 'vi' ? 'Đóng' : 'Close'}
-                            </button>
+
+                        {/* Điều 2 */}
+                        <div className="terms-article">
+                            <div className="terms-article-header">
+                                <span className="terms-article-num">02</span>
+                                <h3>{t('terms_art2_title')}</h3>
+                            </div>
+                            <div className="terms-article-content">
+                                <p>{t('terms_art2_desc')}</p>
+                                <ul>
+                                    <li>{t('terms_art2_li1')}</li>
+                                    <li>{t('terms_art2_li2')}</li>
+                                    <li>{t('terms_art2_li3')}</li>
+                                    <li>{t('terms_art2_li4')}</li>
+                                </ul>
+                                <div className="terms-highlight">
+                                    <i className='bx bx-info-circle'></i>
+                                    <span>{t('terms_art2_note')}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Điều 3 */}
+                        <div className="terms-article">
+                            <div className="terms-article-header">
+                                <span className="terms-article-num">03</span>
+                                <h3>{t('terms_art3_title')}</h3>
+                            </div>
+                            <div className="terms-article-content">
+                                <p>{t('terms_art3_desc')}</p>
+                                <ul>
+                                    <li>{t('terms_art3_li1')}</li>
+                                    <li>{t('terms_art3_li2')}</li>
+                                    <li>{t('terms_art3_li3')}</li>
+                                </ul>
+                                <div className="terms-highlight terms-highlight--warning">
+                                    <i className='bx bx-error'></i>
+                                    <span>{t('terms_art3_warning')}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="terms-footer-info">
+                            <p>{t('terms_last_updated')}</p>
                         </div>
                     </div>
+                    <div className="terms-modal-footer">
+                        <button
+                            className="terms-accept-btn"
+                            onClick={() => { setTermsAccepted(true); setIsTermsModalOpen(false) }}
+                        >
+                            <i className='bx bx-check-shield'></i>
+                            {t('terms_accept')}
+                        </button>
+                        <button
+                            className="terms-close-btn"
+                            onClick={() => setIsTermsModalOpen(false)}
+                        >
+                            {t('terms_close')}
+                        </button>
+                    </div>
                 </div>
-            )}
+            </div>
+        )}
 
             {mfaRequired && (
                 <MfaModal
@@ -740,7 +736,7 @@ export default function AuthPage() {
                             </div>
 
                             {/* Password Strength Meter */}
-                            <PasswordStrengthMeter password={regPassword} lang={lang} />
+                            <PasswordStrengthMeter password={regPassword} lang={lang} t={t} />
 
                             <div className="terms-checkbox" style={{ display: 'flex', alignItems: 'flex-start', margin: '15px 0', fontSize: '0.85rem', textAlign: 'left', lineHeight: '1.4' }}>
                                 <input
@@ -754,14 +750,14 @@ export default function AuthPage() {
                                     {t('auth_terms_agree')}{' '}
                                     <span
                                         onClick={(e) => { e.preventDefault(); setIsTermsModalOpen(true) }}
-                                        style={{ color: '#58a6ff', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                                        style={{ color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px' }}
                                     >
                                         {t('auth_terms_of_service')}
                                     </span>
                                     {' '}{t('auth_and')}{' '}
                                     <span
                                         onClick={(e) => { e.preventDefault(); setIsTermsModalOpen(true) }}
-                                        style={{ color: '#58a6ff', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                                        style={{ color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '2px' }}
                                     >
                                         {t('auth_privacy_policy')}
                                     </span>.
@@ -816,8 +812,11 @@ export default function AuthPage() {
                                 />
                                 <i className={`bx ${showLoginPassword ? 'bx-hide' : 'bx-show'} toggle-password`} onClick={() => setShowLoginPassword(!showLoginPassword)}></i>
                             </div>
-                            <div className="forgot-link">
+                            <div className="forgot-link" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
                                 <a href="#" onClick={(e) => { e.preventDefault(); switchViewMode('forgot') }}>{t('auth_forgot_password')}</a>
+                                <a href="#" onClick={(e) => { e.preventDefault(); handleEmergencyUnblock() }} style={{ color: '#ff4d4f' }}>
+                                    <i className='bx bx-shield-x'></i> Mở khóa IP
+                                </a>
                             </div>
 
                             <button type="submit" className="btn btn-primary btn-full">

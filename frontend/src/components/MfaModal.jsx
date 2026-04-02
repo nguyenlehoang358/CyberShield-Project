@@ -78,16 +78,16 @@ export default function MfaModal({ isOpen, mode, tempToken, onClose, onSuccess }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-            <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md p-8 relative transform transition-all scale-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm px-4" style={{ background: 'rgba(13, 13, 43, 0.4)' }}>
+            <div className="rounded-xl shadow-2xl w-full max-w-md p-8 relative transform transition-all scale-100" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                 <div className="text-center mb-6">
                     <div className="mx-auto bg-blue-500/10 text-blue-500 w-16 h-16 rounded-full flex items-center justify-center mb-4">
                         <i className='bx bx-shield-quarter text-4xl'></i>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
+                    <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
                         {mode === 'setup' ? (t('mfa_setup_title') || 'SETUP 2FA') : (t('mfa_verify_title') || 'SECURITY VERIFICATION')}
                     </h2>
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                         {mode === 'setup' ? (t('mfa_setup_desc') || 'Scan QR with Authenticator app') : (t('mfa_verify_desc') || 'Enter 6 digits')}
                     </p>
                 </div>
@@ -109,7 +109,8 @@ export default function MfaModal({ isOpen, mode, tempToken, onClose, onSuccess }
                             value={digit}
                             onChange={(e) => handleChange(e, i)}
                             onKeyDown={(e) => handleKeyDown(e, i)}
-                            className="w-10 sm:w-12 h-12 sm:h-14 text-center text-xl sm:text-2xl font-bold bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            className="w-10 sm:w-12 h-12 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                         />
                     ))}
                 </div>
@@ -124,7 +125,8 @@ export default function MfaModal({ isOpen, mode, tempToken, onClose, onSuccess }
                     </button>
                     <button
                         onClick={onClose}
-                        className="w-full bg-transparent hover:bg-gray-800 text-gray-400 border border-gray-700 py-3 rounded-lg transition-colors font-medium"
+                        className="btn-back-login"
+                        style={{ marginTop: '0.5rem' }}
                     >
                         {t('mfa_cancel') || 'Cancel'}
                     </button>

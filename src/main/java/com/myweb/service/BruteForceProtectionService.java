@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -45,41 +44,54 @@ public class BruteForceProtectionService {
     private final StringRedisTemplate redisTemplate;
     private final SecurityEventService securityEventService;
     private final BlockedIpHistoryRepository blockedIpRepo;
+    private final com.myweb.service.SystemSettingService settingService;
     private final boolean redisAvailable;
 
-    @Value("${app.bruteforce.max-attempts}")
-    private int maxAttempts;
-
-    @Value("${app.bruteforce.captcha-threshold}")
-    private int captchaThreshold;
-
-    @Value("${app.bruteforce.lock-duration-minutes}")
-    private int lockDurationMinutes;
-
-    @Value("${app.bruteforce.escalation-multiplier}")
-    private int escalationMultiplier;
-
-    @Value("${app.bruteforce.permanent-block-threshold}")
-    private int permanentBlockThreshold;
-
-    @Value("${app.bruteforce.whitelist-ips}")
-    private String whitelistIps;
-
-    public BruteForceProtectionService(StringRedisTemplate redisTemplate,
+    public BruteForceProtectionService(
+            StringRedisTemplate redisTemplate,
             @Lazy SecurityEventService securityEventService,
-            BlockedIpHistoryRepository blockedIpRepo) {
+            BlockedIpHistoryRepository blockedIpRepo,
+            com.myweb.service.SystemSettingService settingService) {
         this.redisTemplate = redisTemplate;
         this.securityEventService = securityEventService;
         this.blockedIpRepo = blockedIpRepo;
+        this.settingService = settingService;
 
-        boolean available = false;
+        boolean isAvailable = false;
         try {
-            redisTemplate.getConnectionFactory().getConnection().ping();
-            available = true;
+            var connFactory = redisTemplate.getConnectionFactory();
+            if (connFactory != null) {
+                connFactory.getConnection().ping();
+                isAvailable = true;
+            }
         } catch (Exception e) {
-            log.warn("⚠️ BruteForce: Redis unavailable — brute force protection disabled");
+            log.warn("🚨 REDIS IS DOWN! BruteForceProtectionService is DISABLED.");
         }
-        this.redisAvailable = available;
+        this.redisAvailable = isAvailable;
+    }
+
+    public int getMaxAttempts() {
+        return Integer.parseInt(settingService.getSettingValue("defense.auto_ban_threshold", "5"));
+    }
+
+    public int getCaptchaThreshold() {
+        return Integer.parseInt(settingService.getSettingValue("defense.captcha_threshold", "3"));
+    }
+
+    public int getLockDurationMinutes() {
+        return Integer.parseInt(settingService.getSettingValue("defense.block_duration_minutes", "60"));
+    }
+
+    public int getEscalationMultiplier() {
+        return Integer.parseInt(settingService.getSettingValue("defense.escalation_multiplier", "5"));
+    }
+
+    public int getPermanentBlockThreshold() {
+        return Integer.parseInt(settingService.getSettingValue("defense.permanent_block_threshold", "50"));
+    }
+
+    public String getIpWhitelist() {
+        return settingService.getSettingValue("defense.ip_whitelist", "");
     }
 
     /**
@@ -113,15 +125,27 @@ public class BruteForceProtectionService {
      * Record a failed login attempt. Returns the current failure count.
      * Automatically escalates blocking based on thresholds.
      */
+    public long recordFailure(String ip) {
+        return recordFailure(ip, null);
+    }
+
+    /**
+     * Record a failed login attempt. Returns the current failure count.
+     * Automatically escalates blocking based on thresholds.
+     */
     public long recordFailure(String ip, String username) {
-        if (!redisAvailable || isWhitelisted(ip))
+        if (!redisAvailable)
             return 0;
+
+        if (isWhitelisted(ip)) {
+            log.info("🛡️ Whitelisted IP {} bypassed limits", ip);
+            return 0;
+        }
 
         try {
             // Increment IP failure counter
-            String ipKey = IP_FAILURE_KEY + ip;
-            Long ipFailures = redisTemplate.opsForValue().increment(ipKey);
-            redisTemplate.expire(ipKey, 1, TimeUnit.HOURS);
+            Long ipFails = redisTemplate.opsForValue().increment(IP_FAILURE_KEY + ip);
+            redisTemplate.expire(IP_FAILURE_KEY + ip, 1, TimeUnit.HOURS);
 
             // Increment user failure counter (if username provided)
             if (username != null && !username.isEmpty()) {
@@ -130,35 +154,45 @@ public class BruteForceProtectionService {
                 redisTemplate.expire(userKey, 1, TimeUnit.HOURS);
             }
 
-            long failures = ipFailures != null ? ipFailures : 0;
+            long failures = ipFails != null ? ipFails : 0;
+
+            int max = getMaxAttempts();
+            if (ipFails != null && ipFails >= max) {
+                log.warn("🚨 IP {} crossed soft limit ({}/{}). Still trying?", ip, ipFails, max);
+            }
+
+            if (ipFails != null && ipFails >= max * 2) {
+                log.warn("🚨 IP {} crossed strict limit ({}/{}). Applying HARD BLOCK.", ip, ipFails, max * 2);
+                blockIP(ip, getLockDurationMinutes(), "REPEATED_BRUTEFORCE");
+            }
 
             // Apply progressive lockout
-            if (failures >= permanentBlockThreshold) {
+            if (failures >= getPermanentBlockThreshold()) {
                 // 50+ failures → block for 24h
                 blockIP(ip, 24 * 60, "BRUTE_FORCE_AUTO_BLOCK_PERMANENT");
                 log.error("🚨 PERMANENT BLOCK: IP {} blocked for 24h ({} failures)", ip, failures);
                 securityEventService.logIpBlocked(ip,
                         String.format("Permanent block: %d failures in 1h (blocked 24h)", failures));
-            } else if (failures >= maxAttempts * 4) {
+            } else if (failures >= max * 4) {
                 // 20+ failures → block for 1h
                 blockIP(ip, 60, "BRUTE_FORCE_AUTO_BLOCK_1H");
                 log.warn("🔴 BLOCK 1H: IP {} ({} failures)", ip, failures);
                 securityEventService.logBruteForce(ip,
                         String.format("Escalated block: %d failures (blocked 1h)", failures));
-            } else if (failures >= maxAttempts * 2) {
-                // 10+ failures → block for 5min
-                blockIP(ip, lockDurationMinutes * escalationMultiplier, "BRUTE_FORCE_AUTO_BLOCK_MED");
+            } else if (failures >= max * 2) {
+                // 10+ failures → block for 5min/dynamic based on lock duration and escalation
+                blockIP(ip, getLockDurationMinutes() * getEscalationMultiplier(), "BRUTE_FORCE_AUTO_BLOCK_MED");
                 log.warn("🟡 BLOCK 5MIN: IP {} ({} failures)", ip, failures);
                 securityEventService.logBruteForce(ip,
                         String.format("Medium block: %d failures (blocked %dmin)", failures,
-                                lockDurationMinutes * escalationMultiplier));
-            } else if (failures >= maxAttempts) {
-                // 5+ failures → block for 1min
-                blockIP(ip, lockDurationMinutes, "BRUTE_FORCE_AUTO_BLOCK_INIT");
-                log.warn("🟠 BLOCK 1MIN: IP {} ({} failures)", ip, failures);
+                                getLockDurationMinutes() * getEscalationMultiplier()));
+            } else if (failures >= max) {
+                // Hard block (chặn cứng: 100 years logging) upon Too Many Requests
+                blockIP(ip, 24 * 60 * 365 * 100, "Brute force attempt detected");
+                log.warn("🔴 HARD BLOCK: IP {} ({} failures)", ip, failures);
                 securityEventService.logRateLimit(ip,
-                        String.format("Initial block: %d failures (blocked %dmin)", failures, lockDurationMinutes));
-            } else if (failures >= captchaThreshold) {
+                        String.format("Hard block: %d failures", failures));
+            } else if (failures >= getCaptchaThreshold()) {
                 // 3+ failures → require CAPTCHA
                 redisTemplate.opsForValue().set(CAPTCHA_KEY + ip, "1", 5, TimeUnit.MINUTES);
                 log.info("🔐 CAPTCHA required for IP: {} ({} failures)", ip, failures);
@@ -207,15 +241,29 @@ public class BruteForceProtectionService {
      * Manually unblock an IP.
      */
     public void unblockIP(String ip) {
-        if (!redisAvailable)
-            return;
         try {
-            redisTemplate.delete(BLOCKED_KEY + ip);
-            redisTemplate.delete(IP_FAILURE_KEY + ip);
-            redisTemplate.delete(CAPTCHA_KEY + ip);
+            if (redisAvailable) {
+                redisTemplate.delete(BLOCKED_KEY + ip);
+                redisTemplate.delete(IP_FAILURE_KEY + ip);
+                redisTemplate.delete(CAPTCHA_KEY + ip);
+            }
+
+            // Mark DB records as unblocked
+            java.util.List<BlockedIpHistory> histories = blockedIpRepo.findByIpAddress(ip);
+            boolean updated = false;
+            for (BlockedIpHistory h : histories) {
+                if (h.getReason() != null && !h.getReason().contains("_UNBLOCKED")) {
+                    h.setReason(h.getReason() + "_UNBLOCKED");
+                    updated = true;
+                }
+            }
+            if (updated) {
+                blockedIpRepo.saveAll(histories);
+            }
+
             log.info("🔓 IP unblocked: {}", ip);
         } catch (Exception e) {
-            log.error("Redis error unblocking IP: {}", e.getMessage());
+            log.error("Error unblocking IP: {}", e.getMessage());
         }
     }
 
@@ -234,13 +282,37 @@ public class BruteForceProtectionService {
     }
 
     private boolean isWhitelisted(String ip) {
-        if (whitelistIps == null)
+        if (ip != null && (ip.startsWith("192.168.") || ip.startsWith("127.") || ip.equals("0:0:0:0:0:0:0:1")
+                || ip.equals("::1"))) {
+            return true;
+        }
+        String whitelists = getIpWhitelist();
+        if (whitelists == null || whitelists.isBlank())
             return false;
-        for (String wip : whitelistIps.split(",")) {
+        for (String wip : whitelists.split(",")) {
             if (wip.trim().equals(ip))
                 return true;
         }
         return false;
+    }
+
+    // Removed @PostConstruct to avoid wiping DB on every app startup
+    public void emergencyUnblockAll() {
+        log.info("🔥 EMERGENCY UNBLOCK: Clearing all blocked IPs from DB and Redis for testing.");
+        try {
+            blockedIpRepo.deleteAll();
+            if (redisAvailable) {
+                Set<String> keys = redisTemplate.keys(BLOCKED_KEY + "*");
+                if (keys != null && !keys.isEmpty())
+                    redisTemplate.delete(keys);
+
+                Set<String> failKeys = redisTemplate.keys(IP_FAILURE_KEY + "*");
+                if (failKeys != null && !failKeys.isEmpty())
+                    redisTemplate.delete(failKeys);
+            }
+        } catch (Exception e) {
+            log.error("Emergency unblock failed: {}", e.getMessage());
+        }
     }
 
     /**
@@ -283,13 +355,6 @@ public class BruteForceProtectionService {
         } catch (Exception e) {
             return 0;
         }
-    }
-
-    /**
-     * Get max attempts config value.
-     */
-    public int getMaxAttempts() {
-        return maxAttempts;
     }
 
     /**

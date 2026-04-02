@@ -2,9 +2,9 @@ spring:
   application:
     name: myweb
   datasource:
-    url: jdbc:postgresql://localhost:5432/springboot_db?options=-c%20TimeZone=UTC
-    username: ${DB_USERNAME:admin}
-    password: ${DB_PASSWORD:admin123}
+    url: jdbc:postgresql://ep-spring-pond-a1d5obpb-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+    username: neondb_owner
+    password: npg_RU5EKVvAhqY3
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -22,6 +22,8 @@ spring:
       enabled: true
     livereload:
       enabled: true
+
+
 
   # ═══ Redis Configuration ═══
   data:
@@ -55,15 +57,15 @@ spring:
         registration:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: email,profile
           facebook:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_ID}
+            client-id: ${FACEBOOK_CLIENT_ID}
+            client-secret: ${FACEBOOK_CLIENT_SECRET}
             scope: email,public_profile
           github:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_ID}
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
             scope: user:email
           linkedin:
             client-id: ${LINKEDIN_CLIENT_ID:YOUR_LINKEDIN_CLIENT_ID}
@@ -81,8 +83,10 @@ spring:
             user-name-attribute: sub
 
 server:
+  address: 0.0.0.0
   port: 8443
   ssl:
+    enabled: ${SSL_ENABLED:true}
     key-store: classpath:keystore.p12
     key-store-password: ${SSL_KEYSTORE_PASSWORD:password}
     key-store-type: PKCS12
@@ -116,9 +120,11 @@ app:
       base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
       model: ${OLLAMA_MODEL:qwen2.5:0.5b}
       embedding-model: ${OLLAMA_EMBEDDING_MODEL:all-minilm}
-      timeout-seconds: 120
-      temperature: 0.7
-      max-tokens: 2048
+      timeout-seconds: 300
+      temperature: 0.1
+      max-tokens: 800
+    gemini:
+      api-key: ${GEMINI_API_KEY}
     # System prompt for the LAB AI Assistant (RAG-enhanced)
     system-prompt: |
       Bạn là CyberShield Security Assistant (Trợ lý AI Bảo Mật Mạng). Nhiệm vụ:
@@ -149,3 +155,34 @@ app:
     dimension: 384
     similarity-threshold: 0.7
     max-results: 5
+
+# ═══════════════════════════════════════════════
+# CyberShield System Settings Defaults
+# Khi database chưa có Settings, hệ thống sẽ
+# đọc các giá trị bên dưới để khởi tạo (Seed).
+# ═══════════════════════════════════════════════
+cybershield:
+  defaults:
+    # ── Tab 1: General System ──
+    general:
+      maintenance-mode: false
+      log-level: ALL
+      default-lang: vi
+
+    # ── Tab 2: Defense Firewall ──
+    defense:
+      auto-ban-threshold: ${app.bruteforce.max-attempts:5}
+      block-duration-minutes: ${app.bruteforce.lock-duration-minutes:1}
+      ip-whitelist: ${app.bruteforce.whitelist-ips:127.0.0.1}
+
+    # ── Tab 3: AI & Automation ──
+    ai:
+      sensitivity: MEDIUM
+      ollama-url: ${app.ai.ollama.base-url:http://127.0.0.1:11434}
+      ollama-model: ${app.ai.ollama.model:qwen2.5:0.5b}
+      auto-resolve: true
+
+    # ── Tab 4: Alerts & Webhooks ──
+    alert:
+      admin-emails: admin@cybershield.local
+      webhook-url: ""

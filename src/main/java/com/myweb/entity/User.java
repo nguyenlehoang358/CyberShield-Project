@@ -43,6 +43,9 @@ public class User {
     @Column(name = "oauth_id")
     private String oauthId;
 
+    @Column(name = "oauth_email")
+    private String oauthEmail; // Email từ Google/GitHub (khác với email nội bộ CyberShield)
+
     @Column(name = "avatar_url", length = 1000)
     private String avatarUrl;
 
@@ -64,19 +67,19 @@ public class User {
     private String phoneNumber;
 
     @Column(name = "account_non_expired")
-    private boolean accountNonExpired = true;
+    private Boolean accountNonExpired = true;
 
     @Column(name = "account_non_locked")
-    private boolean accountNonLocked = true;
+    private Boolean accountNonLocked = true;
 
     @Column(name = "credentials_non_expired")
-    private boolean credentialsNonExpired = true;
+    private Boolean credentialsNonExpired = true;
 
     @Column(name = "enabled")
-    private boolean enabled = true;
+    private Boolean enabled = true;
 
     @Column(name = "failed_login_attempts")
-    private int failedLoginAttempts = 0;
+    private Integer failedLoginAttempts = 0;
 
     @Column(name = "lock_time")
     private Instant lockTime;
@@ -142,6 +145,14 @@ public class User {
         this.oauthId = oauthId;
     }
 
+    public String getOauthEmail() {
+        return oauthEmail;
+    }
+
+    public void setOauthEmail(String oauthEmail) {
+        this.oauthEmail = oauthEmail;
+    }
+
     public String getAvatarUrl() {
         return avatarUrl;
     }
@@ -203,42 +214,42 @@ public class User {
     }
 
     public boolean isAccountNonExpired() {
-        return accountNonExpired;
+        return accountNonExpired != null ? accountNonExpired : true;
     }
 
-    public void setAccountNonExpired(boolean accountNonExpired) {
+    public void setAccountNonExpired(Boolean accountNonExpired) {
         this.accountNonExpired = accountNonExpired;
     }
 
     public boolean isAccountNonLocked() {
-        return accountNonLocked;
+        return accountNonLocked != null ? accountNonLocked : true;
     }
 
-    public void setAccountNonLocked(boolean accountNonLocked) {
+    public void setAccountNonLocked(Boolean accountNonLocked) {
         this.accountNonLocked = accountNonLocked;
     }
 
     public boolean isCredentialsNonExpired() {
-        return credentialsNonExpired;
+        return credentialsNonExpired != null ? credentialsNonExpired : true;
     }
 
-    public void setCredentialsNonExpired(boolean credentialsNonExpired) {
+    public void setCredentialsNonExpired(Boolean credentialsNonExpired) {
         this.credentialsNonExpired = credentialsNonExpired;
     }
 
     public boolean isEnabled() {
-        return enabled;
+        return enabled != null ? enabled : true;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
     public int getFailedLoginAttempts() {
-        return failedLoginAttempts;
+        return failedLoginAttempts != null ? failedLoginAttempts : 0;
     }
 
-    public void setFailedLoginAttempts(int failedLoginAttempts) {
+    public void setFailedLoginAttempts(Integer failedLoginAttempts) {
         this.failedLoginAttempts = failedLoginAttempts;
     }
 

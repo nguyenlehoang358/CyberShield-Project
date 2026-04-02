@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useLanguage } from '../../context/LanguageContext'
+import AIInput from '../../components/common/AIInput'
 
 /* ──────────────────────────────────────
    FAKE DATABASE
@@ -304,7 +305,7 @@ function SQLHighlight({ sql, dangerous }) {
    ────────────────────────────────────── */
 export default function SQLiLab() {
     const { t, lang } = useLanguage()
-    const { setTheory } = useOutletContext()
+    const { setTheory, setLabContext } = useOutletContext()
 
     const [activeTab, setActiveTab] = useState('login')
     const [isVulnerable, setIsVulnerable] = useState(true)
@@ -320,6 +321,22 @@ export default function SQLiLab() {
 
     // Theory
     useEffect(() => { setTheory(<SQLiTheory lang={lang} />) }, [setTheory, lang])
+
+    // Push lab context to Mentor Chat
+    useEffect(() => {
+        if (setLabContext) {
+            const ctx = [
+                `Lab: SQL Injection`,
+                `Mode: ${isVulnerable ? 'VULNERABLE' : 'SAFE'}`,
+                `Tab: ${activeTab}`,
+                activeTab === 'login' && loginUser ? `Login payload: username="${loginUser}", password="${loginPass}"` : '',
+                activeTab === 'search' && searchInput ? `Search payload: "${searchInput}"` : '',
+                loginResult ? `Login result: ${loginResult.success ? 'SUCCESS' : 'FAILED'}, ${loginResult.results?.length || 0} rows` : '',
+                searchResult ? `Search result: ${searchResult.results?.length || 0} rows` : '',
+            ].filter(Boolean).join('. ')
+            setLabContext(ctx)
+        }
+    }, [isVulnerable, activeTab, loginUser, loginPass, loginResult, searchInput, searchResult, setLabContext])
 
     // Execute login
     const handleLogin = useCallback(() => {
@@ -346,6 +363,7 @@ export default function SQLiLab() {
 
     const loginDetections = detectSQLi(loginUser + ' ' + loginPass)
     const searchDetections = detectSQLi(searchInput)
+
 
     return (
         <div className="lab-animate-in">
@@ -396,14 +414,19 @@ export default function SQLiLab() {
                             <div style={{ maxWidth: 360, margin: '0 auto' }}>
                                 <h3 style={{ textAlign: 'center', color: '#1a73e8', marginBottom: 16 }}>🛒 ShopExample Login</h3>
                                 <div style={{ marginBottom: 12 }}>
-                                    <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Username</label>
-                                    <input value={loginUser} onChange={e => setLoginUser(e.target.value)}
-                                        placeholder="admin" onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                                    <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Username (AI Auto-Suggest)</label>
+                                    <AIInput 
+                                        labType="sqli"
+                                        value={loginUser} 
+                                        onChange={e => setLoginUser(e.target.value)}
+                                        placeholder="admin or payload..." 
+                                        onKeyDown={e => e.key === 'Enter' && handleLogin()}
                                         style={{
                                             width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #ddd',
                                             borderRadius: 4, fontSize: '0.88rem',
                                             background: loginDetections.length > 0 ? '#fff5f5' : 'white',
-                                        }} />
+                                        }} 
+                                    />
                                 </div>
                                 <div style={{ marginBottom: 12 }}>
                                     <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Password</label>

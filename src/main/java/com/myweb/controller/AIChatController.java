@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,8 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.myweb.config.AIRateLimiter;
 import com.myweb.service.ChatHistoryService;
+import com.myweb.service.GeminiLabMentorService;
 import com.myweb.service.RAGService;
+import com.myweb.dto.LabChatRequest;
 
+import dev.langchain4j.model.chat.ChatLanguageModel;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -39,13 +43,22 @@ public class AIChatController {
     private final RAGService ragService;
     private final ChatHistoryService chatHistoryService;
     private final AIRateLimiter rateLimiter;
+    private final ChatLanguageModel chatModel;
+    private final GeminiLabMentorService geminiLabMentorService;
+
+    @Value("${app.ai.ollama.model:qwen2.5:0.5b}")
+    private String ollamaModel;
 
     public AIChatController(RAGService ragService,
             ChatHistoryService chatHistoryService,
-            AIRateLimiter rateLimiter) {
+            AIRateLimiter rateLimiter,
+            ChatLanguageModel chatModel,
+            GeminiLabMentorService geminiLabMentorService) {
         this.ragService = ragService;
         this.chatHistoryService = chatHistoryService;
         this.rateLimiter = rateLimiter;
+        this.chatModel = chatModel;
+        this.geminiLabMentorService = geminiLabMentorService;
     }
 
     /**
@@ -163,6 +176,36 @@ public class AIChatController {
     }
 
     /**
+     * GET /api/ai/health-check
+     * Direct test for Ollama model.
+     */
+    @GetMapping("/health-check")
+    public ResponseEntity<?> aiHealthCheck() {
+        log.info("AI Model target: {}", ollamaModel);
+        long startTime = System.currentTimeMillis();
+        try {
+            String prompt = "Say 'Ready' if you are Qwen 2.5";
+            String aiResponse = chatModel.generate(prompt);
+            long latency = System.currentTimeMillis() - startTime;
+
+            log.info("AI Latency: {} ms", latency);
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "Connected",
+                    "reply", aiResponse,
+                    "latencyMs", latency));
+        } catch (Exception e) {
+            long latency = System.currentTimeMillis() - startTime;
+            log.error("AI connection failed after {} ms: {}", latency, e.getMessage());
+
+            return ResponseEntity.status(503).body(Map.of(
+                    "status", "Error",
+                    "instruction", "Hãy chạy lệnh 'ollama pull " + ollamaModel + "' trong terminal của bạn",
+                    "error", e.getMessage()));
+        }
+    }
+
+    /**
      * POST /api/ai/clear
      * Clear chat history for a specific session.
      */
@@ -176,6 +219,39 @@ public class AIChatController {
         }
         chatHistoryService.clearHistory(sessionId);
         return ResponseEntity.ok(Map.of("message", "History cleared", "sessionId", sessionId));
+    }
+
+    /**
+     * POST /api/ai/lab-mentor
+     * Use Gemini AI as a Lab Mentor, providing security hints
+     */
+    @PostMapping("/lab-mentor")
+    public ResponseEntity<?> labMentor(@RequestBody LabChatRequest request,
+            HttpServletRequest httpRequest) {
+        String clientIp = getClientIp(httpRequest);
+
+        // ═══ Rate Limiting ═══
+        if (!rateLimiter.isAllowed(clientIp)) {
+            log.warn("🚫 AI rate limit exceeded for Lab Mentor from IP: {}", clientIp);
+            return ResponseEntity.status(429).body(Map.of(
+                    "error", "Quá nhiều yêu cầu. Vui lòng thử lại sau.",
+                    "status", 429));
+        }
+
+        // Validate
+        if (request.message() == null || request.message().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "Message cannot be empty", "status", 400));
+        }
+
+        // Request Gemini
+        Map<String, Object> aiResponse = geminiLabMentorService.generateMentorResponse(request);
+        
+        // Merge with metadata
+        Map<String, Object> finalResponse = new java.util.HashMap<>(aiResponse);
+        finalResponse.put("model", "gemini-2.5-flash");
+
+        return ResponseEntity.ok(finalResponse);
     }
 
     /**

@@ -97,12 +97,13 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers("/api/auth/**").permitAll()
                                                 .requestMatchers("/api/public/**").permitAll()
-                                                .requestMatchers("/api/contact").permitAll()
+                                                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/contact").permitAll()
                                                 .requestMatchers("/api/ai/chat", "/api/ai/status", "/api/ai/health")
                                                 .permitAll()
                                                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                                                                 "/api/blog/**")
                                                 .permitAll()
+                                                .requestMatchers("/api/lab/**").permitAll()
                                                 .requestMatchers("/api/**").authenticated())
                                 .oauth2Login(oauth2 -> oauth2
                                                 .authorizationEndpoint(authorization -> authorization
@@ -145,10 +146,12 @@ public class SecurityConfig {
         @Bean
         CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration config = new CorsConfiguration();
-                // When using allowCredentials(true) and HttpOnly cookies, CORS cannot use
-                // wildcard origins.
-                config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://192.168.110.34:5173"));
-                config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+                // Since we use allowCredentials(true), we cannot use setAllowedOrigins("*").
+                // However, setAllowedOriginPatterns supports using wildcards with credentials.
+                config.setAllowedOriginPatterns(Arrays.asList("http://localhost:5173", "http://192.168.*.*:5173",
+                                "http://127.0.0.1:5173", "https://*.ngrok-free.app", "https://*.ngrok-free.dev",
+                                "https://tyler-nonexemplary-attractionally.ngrok-free.dev"));
+                config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
                 config.setAllowedHeaders(List.of("*"));
                 config.setAllowCredentials(true);
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -40,6 +40,43 @@
     --radius-full: 9999px;
 }
 
+[data-theme="dark"] {
+    --bg-primary: #0b0f19;
+    --bg-secondary: #131b2c;
+    --bg-card: #151e32;
+    --bg-card-hover: #1e293b;
+    --bg-glass: rgba(11, 15, 25, 0.85);
+
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-light: #ffffff;
+
+    --border: rgba(102, 126, 234, 0.25);
+    --border-light: rgba(255, 255, 255, 0.08);
+
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.6);
+}
+
+/* Fix global dark mode text contrast overrides globally */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-gray-50,
+[data-theme="dark"] .bg-gray-100 {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .text-gray-900, [data-theme="dark"] .text-gray-800, 
+[data-theme="dark"] .text-gray-700, [data-theme="dark"] .text-gray-600 {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-gray-500, [data-theme="dark"] .text-gray-400 {
+    color: var(--text-secondary) !important;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -79,11 +116,12 @@ a {
     background: var(--bg-glass);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border);
     border-radius: var(--radius-full);
     box-shadow: var(--shadow-md);
     width: auto;
     max-width: 95%;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -106,6 +144,7 @@ a {
     background-clip: text;
     letter-spacing: -0.02em;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nav-links {
@@ -138,6 +177,23 @@ a {
 .nav-links > li > span:hover {
     color: var(--accent);
     background: rgba(102, 126, 234, 0.08);
+}
+
+.nav-links a.active {
+    color: var(--accent);
+    position: relative;
+}
+
+.nav-links a.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 2px;
+    background-color: var(--accent);
+    border-radius: 2px;
 }
 
 /* Login button */
@@ -185,6 +241,27 @@ a {
     padding: 0.25rem;
 }
 
+/* Theme toggle */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.08);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 1.1rem;
+    transition: all 0.3s;
+}
+
+.theme-toggle:hover {
+    background: rgba(102, 126, 234, 0.15);
+    transform: scale(1.05);
+}
+
 /* Language toggle */
 .lang-toggle {
     display: inline-flex;
@@ -218,8 +295,23 @@ a {
     margin-bottom: -10px;
 }
 
+/* Safe hover zone */
+.user-menu::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 0;
+    width: 100%;
+    height: 15px;
+    z-index: 10;
+}
+
 .user-menu-content {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: absolute;
     top: calc(100% + 4px);
     right: 0;
@@ -229,7 +321,7 @@ a {
     box-shadow: var(--shadow-lg);
     z-index: 1000;
     border-radius: var(--radius-md);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--border);
     overflow: hidden;
     animation: dropdownSlide 0.25s ease-out;
 }
@@ -251,7 +343,10 @@ a {
 }
 
 .user-menu:hover .user-menu-content {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
 }
 
 .user-menu-content a {
@@ -543,7 +638,7 @@ a {
 }
 
 .section-dark .section-header p {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* Legacy section styles for compatibility */
@@ -790,8 +885,8 @@ a {
     text-align: center;
     padding: 2.5rem 1.5rem;
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(10px);
     transition: all 0.3s;
 }
@@ -805,7 +900,7 @@ a {
 .stat-number {
     font-size: 3rem;
     font-weight: 900;
-    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+    background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -813,9 +908,16 @@ a {
     margin-bottom: 0.5rem;
 }
 
+.text-primary-gradient {
+    background: linear-gradient(135deg, var(--accent), var(--accent-secondary)) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
 .stat-label {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* ========================================
@@ -1006,7 +1108,7 @@ a {
 }
 
 .footer-brand p {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.7);
     font-size: 0.9rem;
     line-height: 1.7;
     margin-bottom: 1.5rem;
@@ -1025,7 +1127,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.75);
     font-size: 1.1rem;
     transition: all 0.3s;
 }
@@ -1054,7 +1156,7 @@ a {
 }
 
 .footer-column a {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.65);
     font-size: 0.9rem;
     transition: all 0.3s;
 }
@@ -1077,7 +1179,7 @@ a {
 }
 
 .footer-bottom p {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.55);
     font-size: 0.85rem;
 }
 
@@ -1087,7 +1189,7 @@ a {
 }
 
 .footer-bottom-links a {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.55);
     font-size: 0.85rem;
 }
 
@@ -1205,7 +1307,8 @@ a {
         right: 0;
         background: var(--bg-glass);
         backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
         border-radius: var(--radius-lg);
         padding: 1rem;
         box-shadow: var(--shadow-lg);

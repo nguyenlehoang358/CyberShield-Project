@@ -46,6 +46,21 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
         if (redirectUriAfterLogin != null && !redirectUriAfterLogin.isBlank()) {
             addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUriAfterLogin, COOKIE_EXPIRE_SECONDS);
         }
+
+        // Nếu có ?mode=link → Đây là luồng Liên kết tài khoản
+        // Đọc cookie 'jwt' HttpOnly (trình duyệt tự gửi) và copy sang cookie tạm 'link_access_token'
+        String mode = request.getParameter("mode");
+        if ("link".equals(mode)) {
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie c : cookies) {
+                    if ("jwt".equals(c.getName()) && c.getValue() != null && !c.getValue().isBlank()) {
+                        addCookie(response, "link_access_token", c.getValue(), COOKIE_EXPIRE_SECONDS);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -57,6 +72,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
     public void removeAuthorizationRequestCookies(HttpServletRequest request, HttpServletResponse response) {
         deleteCookie(request, response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
         deleteCookie(request, response, REDIRECT_URI_PARAM_COOKIE_NAME);
+        deleteCookie(request, response, "link_access_token");
     }
 
     private void addCookie(HttpServletResponse response, String name, String value, int maxAge) {

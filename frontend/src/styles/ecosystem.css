@@ -3,15 +3,15 @@
    ========================================= */
 
 :root {
-    /* Using Lab Color Palette for Consistency */
-    --eco-bg: #0a0e17;
-    --eco-surface: #131a2b;
-    --eco-border: #1e2a42;
-    --eco-border-hover: #58a6ff;
-    --eco-text: #c9d1d9;
-    --eco-text-dim: #8b949e;
+    /* Maps to global Theme Variables for Light/Dark mode support */
+    --eco-bg: var(--bg-primary);
+    --eco-surface: var(--bg-card);
+    --eco-border: var(--border-light);
+    --eco-border-hover: var(--accent);
+    --eco-text: var(--text-primary);
+    --eco-text-dim: var(--text-secondary);
     
-    --eco-primary: #58a6ff;   /* Blue */
+    --eco-primary: var(--accent);   /* Adaptive accent */
     --eco-success: #238636;   /* Green */
     --eco-danger: #da3633;    /* Red */
     --eco-warning: #d29922;   /* Yellow */
@@ -56,8 +56,8 @@
 
 /* Instructions / Theory Box */
 .eco-instructions {
-    background: rgba(88, 166, 255, 0.05);
-    border: 1px solid rgba(88, 166, 255, 0.1);
+    background: var(--bg-card-hover);
+    border: 1px solid var(--eco-border);
     border-radius: var(--eco-radius);
     padding: 1.5rem;
     margin-bottom: 3rem;
@@ -82,7 +82,7 @@
 }
 
 .eco-example {
-    background: rgba(0,0,0,0.2);
+    background: var(--bg-card-hover);
     padding: 0.8rem;
     border-radius: 6px;
     border-left: 3px solid var(--eco-warning);
@@ -97,8 +97,9 @@
     font-size: 2.5rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
-    background: linear-gradient(90deg, #58a6ff, #bc8cff);
+    background: linear-gradient(90deg, var(--eco-primary), var(--eco-border-hover));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     display: inline-block;
 }
@@ -148,7 +149,7 @@
     font-size: 2.5rem;
     font-weight: 900;
     line-height: 1;
-    color: #fff;
+    color: var(--eco-text);
 }
 
 .ctf-label {
@@ -181,7 +182,7 @@
 .ctf-card:hover {
     border-color: var(--eco-primary);
     transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px var(--shadow-md);
 }
 
 .ctf-card.solved {
@@ -215,7 +216,7 @@
 .ctf-card-title {
     font-size: 1.5rem;
     margin-bottom: 1rem;
-    color: #fff;
+    color: var(--eco-text);
 }
 
 .ctf-desc {
@@ -233,12 +234,12 @@
 
 .ctf-input {
     width: 100%;
-    background: #0d1117;
+    background: var(--bg-primary);
     border: 1px solid var(--eco-border);
     border-radius: 8px;
     padding: 0.8rem 1rem;
     padding-right: 90px;
-    color: #fff;
+    color: var(--eco-text);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.9rem;
     outline: none;
@@ -310,7 +311,7 @@
     color: #fff;
     padding: 1rem 1.5rem;
     border-radius: var(--eco-radius);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 30px var(--shadow-md);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -334,7 +335,7 @@
     display: flex;
     gap: 1rem;
     margin-bottom: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px var(--shadow-md);
 }
 
 .scan-input-wrapper {
@@ -352,11 +353,11 @@
 
 .scan-input {
     width: 100%;
-    background: #0d1117;
+    background: var(--bg-primary);
     border: 1px solid var(--eco-border);
     border-radius: 8px;
     padding: 0.8rem 1rem 0.8rem 2.5rem;
-    color: #fff;
+    color: var(--eco-text);
     outline: none;
     font-size: 1rem;
 }
@@ -447,7 +448,7 @@
 .scan-row-content h4 {
     margin: 0 0 0.3rem 0;
     font-size: 1rem;
-    color: #fff;
+    color: var(--eco-text);
 }
 
 .scan-row-content p {
@@ -498,7 +499,7 @@
 .blog-card:hover {
     border-color: var(--eco-primary);
     transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 20px var(--shadow-md);
 }
 
 .blog-content {
@@ -521,7 +522,7 @@
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 1rem;
-    color: #fff;
+    color: var(--eco-text);
     line-height: 1.4;
 }
 
@@ -537,7 +538,7 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 1rem;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid var(--eco-border);
 }
 
 .blog-tags {
@@ -546,7 +547,7 @@
 }
 
 .blog-tag {
-    background: rgba(255,255,255,0.05);
+    background: var(--bg-card-hover);
     padding: 0.2rem 0.5rem;
     border-radius: 4px;
     font-size: 0.75rem;

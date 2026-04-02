@@ -56,11 +56,15 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
         User user = authService.getUser(auth.getName());
-        return ResponseEntity.ok(Map.of(
-                "username", user.getUsername(),
-                "email", user.getEmail(),
-                "roles", user.getRoles().stream().map(r -> r.getName().name()).toList(),
-                "mfaEnabled", Boolean.TRUE.equals(user.isMfaEnabled())));
+        java.util.HashMap<String, Object> response = new java.util.HashMap<>();
+        response.put("username", user.getUsername());
+        response.put("email", user.getEmail());
+        response.put("roles", user.getRoles().stream().map(r -> r.getName().name()).toList());
+        response.put("mfaEnabled", Boolean.TRUE.equals(user.isMfaEnabled()));
+        response.put("oauthProvider", user.getOauthProvider());
+        response.put("oauthEmail", user.getOauthEmail());
+        response.put("hasPassword", user.getPassword() != null && !user.getPassword().isEmpty());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")

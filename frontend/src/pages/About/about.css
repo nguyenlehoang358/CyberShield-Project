@@ -120,7 +120,7 @@
 
 .hero-subtitle {
     font-size: 1.125rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.8);
     max-width: 42rem;
     margin-left: auto;
     margin-right: auto;
@@ -221,13 +221,13 @@
     position: absolute;
     bottom: -1rem;
     right: -1rem;
-    background: white;
+    background: var(--bg-card);
     padding: 1.5rem;
     border-radius: 0.75rem;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     z-index: 20;
     max-width: 250px;
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 1px solid var(--border-light);
     display: none;
 }
 
@@ -249,6 +249,7 @@
     color: var(--text-secondary, #6b7280);
 }
 
+
 .mission-vision-wrapper {
     display: flex;
     flex-direction: column;
@@ -268,7 +269,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(102, 126, 234, 0.1); /* Fallback */
+    background-color: transparent;
     width: 48px;
     height: 48px;
 }
@@ -336,11 +337,11 @@
 
 /* Team Section */
 .team-card {
-    background: white;
+    background: var(--bg-card);
     border-radius: 1rem;
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 1px solid var(--border-light);
     transition: all 0.3s ease;
 }
 

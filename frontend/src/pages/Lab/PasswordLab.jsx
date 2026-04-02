@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useLanguage } from '../../context/LanguageContext'
-
+import { useLab } from '../../context/LabContext'
+import AIInput from '../../components/common/AIInput'
 /* ──────────────────────────────────────
    COMMON PASSWORDS (top 50)
    ────────────────────────────────────── */
@@ -255,11 +256,13 @@ function PasswordTheory({ lang }) {
    ────────────────────────────────────── */
 export default function PasswordLab() {
     const { t, lang } = useLanguage()
-    const { setTheory } = useOutletContext()
+    const { setTheory, setLabContext } = useOutletContext()
+    const { labInputData, setLabInputData } = useLab()
     const fmt = lang === 'vi' ? formatTime : formatTimeEn
 
-    // State
-    const [password, setPassword] = useState('')
+    // Analyzer state — using context for main input
+    const password = labInputData
+    const setPassword = setLabInputData
     const [showPassword, setShowPassword] = useState(true)
     const analysis = analyzePassword(password)
 
@@ -391,7 +394,7 @@ export default function PasswordLab() {
                     { id: 'generator', label: lang === 'vi' ? '🎲 Tạo mật khẩu' : '🎲 Generator' },
                 ].map(tab => (
                     <button key={tab.id} className={`lab-tab ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}>
+                        onClick={() => { setActiveTab(tab.id); window.scrollTo({ top: 0, behavior: 'instant' }); }}>
                         {tab.label}
                     </button>
                 ))}
@@ -407,13 +410,14 @@ export default function PasswordLab() {
                                 🔑 {lang === 'vi' ? 'Nhập mật khẩu để phân tích' : 'Enter password to analyze'}
                             </label>
                             <div style={{ position: 'relative' }}>
-                                <input
+                                <AIInput
                                     className="lab-input"
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     placeholder={lang === 'vi' ? 'Thử nhập mật khẩu bất kỳ...' : 'Try any password...'}
-                                    style={{ paddingRight: '3rem', fontSize: '1.1rem', letterSpacing: showPassword ? '0.05em' : '0.15em' }}
+                                    style={{ paddingRight: '2.5rem', fontSize: '1.1rem', letterSpacing: showPassword ? '0.05em' : '0.15em' }}
+                                    labType="bruteforce"
                                 />
                                 <button
                                     onClick={() => setShowPassword(p => !p)}
@@ -600,13 +604,14 @@ export default function PasswordLab() {
                             <label className="lab-input-label">
                                 🎯 {lang === 'vi' ? 'Mật khẩu mục tiêu (≤ 6 ký tự)' : 'Target password (≤ 6 chars)'}
                             </label>
-                            <input
+                            <AIInput
                                 className="lab-input"
                                 value={password}
                                 onChange={e => setPassword(e.target.value.slice(0, 6))}
                                 maxLength={6}
                                 placeholder="abc"
                                 style={{ fontSize: '1.2rem', letterSpacing: '0.1em' }}
+                                labType="bruteforce"
                             />
                         </div>
 

@@ -48,7 +48,6 @@ export default function Footer() {
                     <ul>
                         <li><Link to="/">{t('footer_blog')}</Link></li>
                         <li><Link to="/">{t('footer_docs')}</Link></li>
-                        <li><Link to="/contact">{t('footer_support')}</Link></li>
                         <li><Link to="/lab">{t('footer_lab')}</Link></li>
                     </ul>
                 </div>

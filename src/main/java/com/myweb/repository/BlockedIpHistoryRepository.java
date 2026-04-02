@@ -13,4 +13,6 @@ public interface BlockedIpHistoryRepository extends JpaRepository<BlockedIpHisto
 
     @Query("SELECT b FROM BlockedIpHistory b WHERE b.ipAddress LIKE %:query% OR b.reason LIKE %:query% ORDER BY b.createdAt DESC")
     Page<BlockedIpHistory> searchByIpOrReason(@Param("query") String query, Pageable pageable);
+
+    java.util.List<BlockedIpHistory> findByIpAddress(String ipAddress);
 }

@@ -55,7 +55,7 @@ export default function Contact() {
                 <div className="grid md:grid-cols-3 gap-8 mb-20" style={{ marginBottom: '90px' }}>
                     {/* Contact Info Cards */}
                     <div className="contact-card">
-                        <div className="contact-icon bg-blue-50 text-accent">
+                        <div className="contact-icon text-accent">
                             <Mail size={24} />
                         </div>
                         <h3 className="contact-card-title">{t('contact_email_title')}</h3>
@@ -64,7 +64,7 @@ export default function Contact() {
                     </div>
 
                     <div className="contact-card">
-                        <div className="contact-icon bg-purple-50 text-accent-secondary">
+                        <div className="contact-icon text-accent-secondary">
                             <Phone size={24} />
                         </div>
                         <h3 className="contact-card-title">{t('contact_phone_title')}</h3>
@@ -73,12 +73,12 @@ export default function Contact() {
                     </div>
 
                     <div className="contact-card">
-                        <div className="contact-icon bg-pink-50 text-accent-pink">
+                        <div className="contact-icon text-accent-pink">
                             <MapPin size={24} />
                         </div>
                         <h3 className="contact-card-title">{t('contact_office_title')}</h3>
                         <p className="contact-card-desc">{t('contact_office_desc')}</p>
-                        <p className="contact-text">Ho Chi Minh City, Vietnam</p>
+                        <p className="contact-text">66 Võ Văn Tần, Đà Nẵng</p>
                         <p className="contact-text text-sm text-secondary mt-1">{t('contact_hours')}</p>
                     </div>
                 </div>
@@ -181,6 +181,19 @@ export default function Contact() {
 
                     {/* FAQ / Support Sidebar */}
                     <div className="contact-sidebar">
+                        <div className="mb-8 rounded-xl overflow-hidden border border-border">
+                            <iframe 
+                                title="Google Maps - CyberShield Office"
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3833.882942468307!2d108.2163919114624!3d16.07156903930432!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3142183610b429f9%3A0xe5a3c0c05cd9c2a!2zNjYgVsO1IFbEg24gVOG6p24sIENow61uaCBHacOhbiwgVGhhbmggS2jDqiwgxJDDoCBO4bq1bmcgNTUwMDAwLCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1703273188562!5m2!1svi!2s" 
+                                width="100%" 
+                                height="300" 
+                                style={{ border: 0 }} 
+                                allowFullScreen="" 
+                                loading="lazy" 
+                                referrerPolicy="no-referrer-when-downgrade"
+                            ></iframe>
+                        </div>
+
                         <div className="faq-card relative overflow-hidden">
                             <div className="faq-bg-decoration"></div>
 

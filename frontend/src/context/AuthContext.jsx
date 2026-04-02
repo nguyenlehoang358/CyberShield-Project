@@ -4,10 +4,27 @@ import axios from 'axios'
 
 const AuthContext = createContext()
 
+// Lấy IP động để hỗ trợ truy cập mạng LAN từ điện thoại
+const currentHost = window.location.hostname
+let apiBaseURL = `https://${currentHost}:8443/api`
+
+// Nếu là localhost, dùng đường dẫn tương đối để qua Vite Proxy (giúp bỏ qua lỗi SSL self-signed)
+if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+    apiBaseURL = '/api'
+}
+// Nếu truy cập từ ngrok (Internet)
+else if (currentHost.includes('ngrok-free.app') || currentHost.includes('ngrok-free.dev')) {
+    apiBaseURL = import.meta.env.VITE_NGROK_BACKEND_URL || `https://api-${currentHost}/api`
+}
+
 // Axios instance
 const api = axios.create({
-    baseURL: 'https://localhost:8443/api',
-    withCredentials: true
+    baseURL: apiBaseURL,
+    withCredentials: true,
+    headers: {
+        'ngrok-skip-browser-warning': 'true', // Bỏ qua màng hình cảnh báo của ngrok
+        'bypass-tunnel-reminder': 'true' // Bỏ qua cảnh báo Localtunnel
+    }
 })
 
 export function AuthProvider({ children }) {

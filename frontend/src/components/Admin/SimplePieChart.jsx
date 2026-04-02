@@ -1,23 +1,24 @@
 import React, { useEffect, useState } from 'react'
 
 const GRADIENTS = {
-    success: ['#10b981', '#059669'],
-    warning: ['#f59e0b', '#d97706'],
-    danger: ['#ef4444', '#be123c'],
-    primary: ['#6366f1', '#a855f7'],
-    secondary: ['#0ea5e9', '#2563eb'],
+    // Power BI Data-driven vibrant colors
+    success: ['#00FF9D', '#03E08A'], // Bright Neon Green
+    warning: ['#FFC300', '#FFA200'], // Vibrant Yellow-Orange
+    danger: ['#FF0055', '#D80044'],  // Magenta Pink/Red
+    primary: ['#00C4FF', '#0095FF'], // Cyan Blue
+    secondary: ['#B800FF', '#8600FF'], // Deep Purple
 }
 
 function resolveGradient(color) {
     if (color?.includes('ef4444') || color?.includes('red') || color?.includes('danger')) return GRADIENTS.danger
     if (color?.includes('22c55e') || color?.includes('10b981') || color?.includes('green') || color?.includes('success')) return GRADIENTS.success
     if (color?.includes('f59e0b') || color?.includes('yellow') || color?.includes('warning') || color?.includes('amber')) return GRADIENTS.warning
-    if (color?.includes('6366f1') || color?.includes('purple') || color?.includes('primary') || color?.includes('indigo')) return GRADIENTS.primary
-    if (color?.includes('3b82f6') || color?.includes('0ea5e9') || color?.includes('blue') || color?.includes('cyan')) return GRADIENTS.secondary
+    if (color?.includes('6366f1') || color?.includes('purple') || color?.includes('primary') || color?.includes('indigo')) return GRADIENTS.secondary
+    if (color?.includes('3b82f6') || color?.includes('0ea5e9') || color?.includes('blue') || color?.includes('cyan')) return GRADIENTS.primary
     return GRADIENTS.primary
 }
 
-export default function SimplePieChart({ data = [], title }) {
+export default function SimplePieChart({ data = [], title, titleColor }) {
     const [animated, setAnimated] = useState(false)
     const safeData = data.map(d => ({ ...d, value: Number(d.value) || 0 }))
     const total = safeData.reduce((sum, d) => sum + d.value, 0) || 1
@@ -37,16 +38,13 @@ export default function SimplePieChart({ data = [], title }) {
         return { ...item, start, end: accumulated, c1, c2 }
     })
 
-    // Create segments with gradient-like intermediate stops
-    const conicParts = segments.flatMap(s => [
-        `${s.c1} ${s.start}%`,
-        `${s.c2} ${s.end}%`
-    ])
+    // Create true conic segments with stops to prevent blending between unrelated segments
+    const conicParts = segments.map(s => `${s.c1} ${s.start}%, ${s.c2} ${s.end}%`)
     const conicGradient = conicParts.join(', ')
 
     return (
         <div className="admin-chart-card">
-            <h3>{title}</h3>
+            <h3 style={titleColor ? { color: titleColor } : {}}>{title}</h3>
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -87,16 +85,16 @@ export default function SimplePieChart({ data = [], title }) {
                         justifyContent: 'center'
                     }}>
                         <span style={{
-                            fontSize: '1.5rem',
-                            fontWeight: 800,
-                            color: 'var(--text-primary, #e6edf3)',
+                            fontSize: '1.8rem',
+                            fontWeight: 900,
+                            color: 'var(--text-primary, #ffffff)',
                             lineHeight: 1,
                             letterSpacing: '-0.5px'
                         }}>
                             {safeData.reduce((s, d) => s + d.value, 0)}
                         </span>
                         <span style={{
-                            fontSize: '0.65rem',
+                            fontSize: '0.75rem',
                             color: 'var(--text-secondary, #6e7a8a)',
                             fontWeight: 600,
                             textTransform: 'uppercase',

@@ -10,25 +10,30 @@ import org.springframework.stereotype.Component;
 import com.myweb.entity.ERole;
 import com.myweb.entity.Role;
 import com.myweb.entity.User;
+import com.myweb.entity.Contact;
+import com.myweb.entity.Blog;
 import com.myweb.repository.RoleRepository;
-import com.myweb.repository.SolutionRepository;
 import com.myweb.repository.UserRepository;
-import com.myweb.entity.Solution;
+import com.myweb.repository.ContactRepository;
+import com.myweb.repository.BlogRepository;
+import java.time.Instant;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
 
         private final UserRepository userRepository;
         private final RoleRepository roleRepository;
-        private final SolutionRepository solutionRepository;
         private final PasswordEncoder passwordEncoder;
+        private final ContactRepository contactRepository;
+        private final BlogRepository blogRepository;
 
         public DataInitializer(UserRepository userRepository, RoleRepository roleRepository,
-                        SolutionRepository solutionRepository, PasswordEncoder passwordEncoder) {
+                        PasswordEncoder passwordEncoder, ContactRepository contactRepository, BlogRepository blogRepository) {
                 this.userRepository = userRepository;
                 this.roleRepository = roleRepository;
-                this.solutionRepository = solutionRepository;
                 this.passwordEncoder = passwordEncoder;
+                this.contactRepository = contactRepository;
+                this.blogRepository = blogRepository;
         }
 
         @Override
@@ -74,79 +79,44 @@ public class DataInitializer implements CommandLineRunner {
                 }
 
                 seedSolutions();
+                seedContacts();
+                seedBlogs();
         }
 
         private void seedSolutions() {
-                if (solutionRepository.count() == 0) {
-                        System.out.println("=== Seeding Default Solutions ===");
+                // Delegated to SolutionSeeder
+        }
 
-                        // Web Development
-                        solutionRepository.save(new Solution(null,
-                                        "Phát triển Web",
-                                        "Web Development",
-                                        "Phát triển web hiện đại, responsive với công nghệ mới nhất.",
-                                        "Modern, responsive web development with the latest technologies.",
-                                        "Zap",
-                                        "blue",
-                                        1,
-                                        true));
-
-                        // AI / Data
-                        solutionRepository.save(new Solution(null,
-                                        "AI / Dữ liệu",
-                                        "AI / Data",
-                                        "Giải pháp AI và phân tích dữ liệu giúp doanh nghiệp vượt trội.",
-                                        "AI and data analytics solutions for business excellence.",
-                                        "Database",
-                                        "purple",
-                                        2,
-                                        true));
-
-                        // Security
-                        solutionRepository.save(new Solution(null,
-                                        "An ninh mạng",
-                                        "Cyber Security",
-                                        "Bảo mật thông tin, mã hóa dữ liệu hàng đầu.",
-                                        "Top-tier information security and data encryption.",
-                                        "Shield",
-                                        "pink",
-                                        3,
-                                        true));
-
-                        // Blockchain
-                        solutionRepository.save(new Solution(null,
-                                        "Blockchain",
-                                        "Blockchain",
-                                        "Tư vấn và phát triển ứng dụng Blockchain chuyên nghiệp.",
-                                        "Professional blockchain application consulting and development.",
-                                        "Cpu",
-                                        "coral",
-                                        4,
-                                        true));
-
-                        // Cloud
-                        solutionRepository.save(new Solution(null,
-                                        "Cloud Solutions",
-                                        "Cloud Solutions",
-                                        "Hạ tầng đám mây tối ưu chi phí và hiệu năng.",
-                                        "Cost-optimized, high-performance cloud infrastructure.",
-                                        "Cloud",
-                                        "green",
-                                        5,
-                                        true));
-
-                        // Consulting
-                        solutionRepository.save(new Solution(null,
-                                        "Tư vấn",
-                                        "Consulting",
-                                        "Tư vấn chiến lược chuyển đổi số toàn diện.",
-                                        "Comprehensive digital transformation consulting strategy.",
-                                        "Check",
-                                        "cyan",
-                                        6,
-                                        true));
-
-                        System.out.println("=== Solutions Seeded ===");
+        private void seedContacts() {
+            if (contactRepository.count() == 0) {
+                System.out.println("=== Seeding Contacts ===");
+                String[][] mockContacts = {
+                    {"Nguyễn Văn Bảo", "nguyenvanbao@gmail.com", "Vui lòng tư vấn giải pháp chống Brute Force cho website."},
+                    {"Trần Thị Hà", "tranha.sec@yahoo.com", "CyberShield có phân tích mã nguồn không?"},
+                    {"Lê Minh Phân", "minh.phan99@student.edu.vn", "Xin chào, lab SQL Injection đang bị lỗi."}
+                };
+                for (String[] data : mockContacts) {
+                    Contact c = new Contact();
+                    c.setName(data[0]); c.setEmail(data[1]); c.setMessage(data[2]); 
+                    c.setIsRead(false); c.setCreatedAt(Instant.now());
+                    contactRepository.save(c);
                 }
+            }
+        }
+
+        private void seedBlogs() {
+            if (blogRepository.count() == 0) {
+                System.out.println("=== Seeding Default Blogs ===");
+                String[][] mockBlogs = {
+                    {"Nghiên cứu mới về APT-28", "Nhóm hacker APT-28 đã cập nhật mã độc backdoor mới, nhắm vào các hạ tầng...", "https://thehackernews.com/article1", "https://thehackernews.com/new-images/img/apt.jpg"},
+                    {"Ransomware tấn công bệnh viện", "Theo nguồn tin, hơn 14 bệnh viện đã bị ảnh hưởng nặng nề bởi Ransomware biến thể mới.", "https://thehackernews.com/article2", "https://thehackernews.com/new-images/img/rans.jpg"}
+                };
+                for (String[] data : mockBlogs) {
+                    Blog b = new Blog();
+                    b.setTitle(data[0]); b.setSummary(data[1]); b.setUrl(data[2]); b.setImageUrl(data[3]);
+                    b.setPublishedAt(Instant.now()); b.setPublished(true);
+                    blogRepository.save(b);
+                }
+            }
         }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useLanguage } from '../../context/LanguageContext'
-
+import AIInput from '../../components/common/AIInput'
 /* ──────────────────────────────────────
    ENCRYPTION ALGORITHMS (pure JS)
    ────────────────────────────────────── */
@@ -368,7 +368,7 @@ export default function EncryptionLab() {
                     <button
                         key={tab}
                         className={`lab-tab ${activeTab === tab ? 'active' : ''}`}
-                        onClick={() => { setActiveTab(tab); setVisSteps([]); setBruteResults([]); setError('') }}
+                        onClick={() => { setActiveTab(tab); setVisSteps([]); setBruteResults([]); setError(''); window.scrollTo({ top: 0, behavior: 'instant' }); }}
                     >
                         {tab === 'caesar' ? '🏛️ Caesar' : tab === 'vigenere' ? '🔤 Vigenère' : '🔒 AES-256'}
                     </button>
@@ -385,10 +385,12 @@ export default function EncryptionLab() {
                             <label className="lab-input-label">
                                 📝 {lang === 'vi' ? 'Văn bản gốc (Plaintext)' : 'Plaintext'}
                             </label>
-                            <textarea
+                            <AIInput
+                                as="textarea"
                                 className="lab-input lab-textarea"
                                 value={plaintext}
                                 onChange={e => setPlaintext(e.target.value)}
+                                labType="encryption"
                                 placeholder={lang === 'vi' ? 'Nhập văn bản cần mã hóa...' : 'Enter text to encrypt...'}
                                 rows={3}
                             />
@@ -399,11 +401,13 @@ export default function EncryptionLab() {
                             <label className="lab-input-label">
                                 🔒 {lang === 'vi' ? 'Bản mã (Ciphertext)' : 'Ciphertext'}
                             </label>
-                            <textarea
+                            <AIInput
+                                as="textarea"
                                 className="lab-input lab-textarea"
                                 value={ciphertext}
                                 onChange={e => setCiphertext(e.target.value)}
-                                placeholder={lang === 'vi' ? 'Kết quả mã hóa sẽ hiện ở đây...' : 'Encrypted result will appear here...'}
+                                labType="encryption"
+                                placeholder={lang === 'vi' ? 'Kết quả giải mã sẽ được dùng để Auto-Suggest hoặc nhập payload...' : 'Ciphertext payload...'}
                                 rows={3}
                             />
                         </div>
@@ -435,10 +439,11 @@ export default function EncryptionLab() {
                                 <label className="lab-input-label">
                                     🔑 {lang === 'vi' ? 'Từ khóa (Keyword)' : 'Keyword'}
                                 </label>
-                                <input
+                                <AIInput
                                     className="lab-input"
                                     value={vigenereKey}
                                     onChange={e => setVigenereKey(e.target.value.replace(/[^a-zA-Z]/g, ''))}
+                                    labType="encryption"
                                     placeholder="SECRET"
                                     maxLength={20}
                                 />
@@ -450,11 +455,12 @@ export default function EncryptionLab() {
                                 <label className="lab-input-label">
                                     🔑 {lang === 'vi' ? 'Mật khẩu (Password)' : 'Password / Passphrase'}
                                 </label>
-                                <input
+                                <AIInput
                                     className="lab-input"
                                     type="password"
                                     value={aesPassword}
                                     onChange={e => setAesPassword(e.target.value)}
+                                    labType="encryption"
                                     placeholder={lang === 'vi' ? 'Nhập mật khẩu bất kỳ...' : 'Enter any passphrase...'}
                                 />
                             </div>

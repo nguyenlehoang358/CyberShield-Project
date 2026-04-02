@@ -12,6 +12,8 @@ import com.myweb.entity.AuditLog;
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     List<AuditLog> findTop20ByOrderByTimestampDesc();
 
+    List<AuditLog> findTop20BySeverityOrderByTimestampDesc(AuditLog.Severity severity);
+
     long countBySeverity(AuditLog.Severity severity);
 
     long countByTimestampAfter(Instant timestamp);

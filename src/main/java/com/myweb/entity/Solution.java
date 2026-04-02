@@ -39,11 +39,17 @@ public class Solution {
     @Column(nullable = false)
     private Boolean active;
 
+    @Column(name = "detail_json", columnDefinition = "TEXT")
+    private String detailJson;
+
+    @Column(name = "related_labs_json", columnDefinition = "TEXT")
+    private String relatedLabsJson;
+
     public Solution() {
     }
 
     public Solution(Long id, String titleVi, String titleEn, String descriptionVi, String descriptionEn,
-            String icon, String color, Integer displayOrder, Boolean active) {
+            String icon, String color, Integer displayOrder, Boolean active, String detailJson, String relatedLabsJson) {
         this.id = id;
         this.titleVi = titleVi;
         this.titleEn = titleEn;
@@ -53,6 +59,8 @@ public class Solution {
         this.color = color;
         this.displayOrder = displayOrder;
         this.active = active;
+        this.detailJson = detailJson;
+        this.relatedLabsJson = relatedLabsJson;
     }
 
     // Getters and Setters
@@ -127,5 +135,21 @@ public class Solution {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public String getDetailJson() {
+        return detailJson;
+    }
+
+    public void setDetailJson(String detailJson) {
+        this.detailJson = detailJson;
+    }
+
+    public String getRelatedLabsJson() {
+        return relatedLabsJson;
+    }
+
+    public void setRelatedLabsJson(String relatedLabsJson) {
+        this.relatedLabsJson = relatedLabsJson;
     }
 }

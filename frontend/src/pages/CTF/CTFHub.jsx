@@ -94,7 +94,7 @@ export default function CTFHub() {
                                 className="ctf-hint-btn"
                                 style={{ margin: 0, border: '1px solid var(--eco-border)', padding: '0.4rem 0.8rem', borderRadius: '6px' }}
                             >
-                                <Globe size={16} /> {lang === 'vi' ? 'English' : 'Tiếng Việt'}
+                                <Globe size={16} /> {lang.toUpperCase()}
                             </button>
                         </div>
                     </div>
@@ -153,7 +153,7 @@ export default function CTFHub() {
                                 ) : (
                                     <form onSubmit={(e) => submitFlag(e, chal.id)} className="ctf-input-group">
                                         <div style={{ position: 'relative' }}>
-                                            <Target size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: '#666' }} />
+                                            <Target size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--eco-text-dim)' }} />
                                             <input
                                                 type="text"
                                                 className="ctf-input"

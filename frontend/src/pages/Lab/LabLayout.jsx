@@ -5,8 +5,10 @@ import { useLabProgress } from '../../context/LabProgressContext'
 import {
     ChevronLeft, ChevronRight, BookOpen, ArrowLeft,
     Lock, Hash, Shield, Code, Database, Key, Globe, FileKey,
-    CheckCircle2, RotateCcw, Keyboard
+    CheckCircle2, RotateCcw, Keyboard, Sparkles
 } from 'lucide-react'
+import LabMentorChat from './LabMentorChat'
+import { useLab } from '../../context/LabContext'
 import '../../styles/lab.css'
 
 const labList = [
@@ -28,8 +30,16 @@ export default function LabLayout() {
     const [theoryContent, setTheoryContent] = useState(null)
     const [isScrolled, setIsScrolled] = useState(false)
     const [showShortcuts, setShowShortcuts] = useState(false)
+    const [sidebarTab, setSidebarTab] = useState('theory')
+    const [labContext, setLabContext] = useState('')
 
     const { isLabCompleted, completeLab, resetLab } = useLabProgress()
+    const { setLabInputData } = useLab()
+
+    // Reset Lab Context when switching labs
+    useEffect(() => {
+        setLabInputData('');
+    }, [location.pathname, setLabInputData])
 
     // Detect scroll to apply sticky header background
     useEffect(() => {
@@ -232,18 +242,49 @@ export default function LabLayout() {
 
                 {/* Theory Sidebar */}
                 <aside className={`lab-sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
-                    <div className="lab-theory-title">
-                        <BookOpen size={14} />
-                        {t('lab_theory')}
+                    {/* Sidebar Tabs: Theory / Mentor */}
+                    <div className="lab-sidebar-tabs">
+                        <button
+                            className={`lab-sidebar-tab ${sidebarTab === 'theory' ? 'active' : ''}`}
+                            onClick={() => { setSidebarTab('theory'); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+                        >
+                            <BookOpen size={13} />
+                            {t('lab_theory')}
+                        </button>
+                        <button
+                            className={`lab-sidebar-tab ${sidebarTab === 'mentor' ? 'active' : ''}`}
+                            onClick={() => { setSidebarTab('mentor'); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+                        >
+                            <Sparkles size={13} />
+                            Lab Mentor
+                        </button>
                     </div>
-                    <div className="lab-theory">
-                        {theoryContent}
-                    </div>
+
+                    {/* Theory Content */}
+                    {sidebarTab === 'theory' && (
+                        <>
+                            <div className="lab-theory-title">
+                                <BookOpen size={14} />
+                                {t('lab_theory')}
+                            </div>
+                            <div className="lab-theory">
+                                {theoryContent}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Mentor Chat */}
+                    {sidebarTab === 'mentor' && (
+                        <LabMentorChat
+                            labId={currentSlug}
+                            labContext={labContext}
+                        />
+                    )}
                 </aside>
 
                 {/* Main simulation area */}
                 <main className="lab-main">
-                    <Outlet context={{ sidebarOpen, setSidebarOpen, setTheory }} />
+                    <Outlet context={{ sidebarOpen, setSidebarOpen, setTheory, setLabContext }} />
                 </main>
             </div>
         </div>

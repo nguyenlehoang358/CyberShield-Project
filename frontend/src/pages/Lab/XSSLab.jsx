@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useLanguage } from '../../context/LanguageContext'
+import AIInput from '../../components/common/AIInput'
 
 /* ──────────────────────────────────────
    XSS DETECTION & SANITIZATION
@@ -192,7 +193,7 @@ function FakeBrowser({ url, children, title }) {
    ────────────────────────────────────── */
 export default function XSSLab() {
     const { t, lang } = useLanguage()
-    const { setTheory } = useOutletContext()
+    const { setTheory, setLabContext } = useOutletContext()
 
     // State
     const [activeTab, setActiveTab] = useState('reflected')
@@ -210,6 +211,21 @@ export default function XSSLab() {
     useEffect(() => {
         setTheory(<XSSTheory lang={lang} />)
     }, [setTheory, lang])
+
+    // Push lab context to Mentor Chat
+    useEffect(() => {
+        if (setLabContext) {
+            const ctx = [
+                `Lab: XSS (Cross-Site Scripting)`,
+                `Mode: ${isVulnerable ? 'VULNERABLE' : 'SAFE'}`,
+                `Tab: ${activeTab}`,
+                activeTab === 'reflected' && reflectedInput ? `Reflected payload: "${reflectedInput}"` : '',
+                activeTab === 'stored' && newComment ? `Stored comment payload: "${newComment}"` : '',
+                alertLog.length > 0 ? `Attack log entries: ${alertLog.length}` : '',
+            ].filter(Boolean).join('. ')
+            setLabContext(ctx)
+        }
+    }, [isVulnerable, activeTab, reflectedInput, newComment, alertLog, setLabContext])
 
     // Log intercepted "alert" calls
     const logAlert = useCallback((msg) => {
@@ -360,9 +376,10 @@ export default function XSSLab() {
                         {/* Input */}
                         <div className="lab-input-group">
                             <label className="lab-input-label">
-                                🔍 {lang === 'vi' ? 'Ô tìm kiếm (nhập payload XSS)' : 'Search box (enter XSS payload)'}
+                                🔍 {lang === 'vi' ? 'Ô tìm kiếm (AI Auto-Suggest)' : 'Search box (AI Auto-Suggest)'}
                             </label>
-                            <input
+                            <AIInput
+                                labType="xss"
                                 className="lab-input"
                                 value={reflectedInput}
                                 onChange={e => setReflectedInput(e.target.value)}
@@ -505,7 +522,8 @@ export default function XSSLab() {
                                     💬 {lang === 'vi' ? 'Thêm bình luận' : 'Add a comment'}
                                 </div>
                                 <div style={{ display: 'flex', gap: 8 }}>
-                                    <input
+                                    <AIInput
+                                        labType="xss"
                                         value={newComment}
                                         onChange={e => setNewComment(e.target.value)}
                                         placeholder={lang === 'vi' ? 'Viết bình luận... (thử chèn XSS!)' : 'Write a comment... (try injecting XSS!)'}

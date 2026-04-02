@@ -20,10 +20,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final JwtUtil jwtUtil;
 
-    public CustomOAuth2UserService(UserRepository userRepository, RoleRepository roleRepository) {
+    public CustomOAuth2UserService(UserRepository userRepository, RoleRepository roleRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -83,7 +85,41 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             email = id + "@" + provider + ".com";
         }
 
-        // 3. LƯU VÀO DATABASE
+        // --- BẮT QUÁ TRÌNH LIÊN KẾT TÀI KHOẢN TỪ COOKIE TẠM ---
+        String linkAccessToken = null;
+        org.springframework.web.context.request.ServletRequestAttributes attr = 
+            (org.springframework.web.context.request.ServletRequestAttributes) org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            
+        if (attr != null && attr.getRequest() != null) {
+            jakarta.servlet.http.Cookie[] cookies = attr.getRequest().getCookies();
+            if (cookies != null) {
+                for (jakarta.servlet.http.Cookie c : cookies) {
+                    if ("link_access_token".equals(c.getName())) {
+                        linkAccessToken = c.getValue();
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Nếu CÓ JWT hợp lệ: Đây là luồng LIÊN KẾT
+        if (linkAccessToken != null && jwtUtil.validateToken(linkAccessToken)) {
+            String usernameFromToken = jwtUtil.getUsernameFromToken(linkAccessToken);
+            Optional<User> currentUserOpt = userRepository.findByUsername(usernameFromToken);
+            if (currentUserOpt.isPresent()) {
+                User currentUser = currentUserOpt.get();
+                currentUser.setOauthProvider(provider);
+                currentUser.setOauthId(id);
+                currentUser.setOauthEmail(email); // Lưu email từ Google/GitHub
+                if (avatarUrl != null && !avatarUrl.equals(currentUser.getAvatarUrl())) {
+                    currentUser.setAvatarUrl(avatarUrl);
+                }
+                userRepository.save(currentUser);
+                return oauth2User;
+            }
+        }
+
+        // 3. LƯU VÀO DATABASE CHO LUỒNG ĐĂNG NHẬP/ĐĂNG KÝ MỚI
         Optional<User> userOptional = userRepository.findByEmail(email);
         User user;
         if (userOptional.isPresent()) {
@@ -93,6 +129,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             if (user.getOauthProvider() == null || !user.getOauthProvider().equals(provider)) {
                 user.setOauthProvider(provider);
                 user.setOauthId(id);
+                user.setOauthEmail(email);
                 updated = true;
             }
             if (avatarUrl != null && !avatarUrl.equals(user.getAvatarUrl())) {
@@ -117,6 +154,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             user.setOauthProvider(provider);
             user.setOauthId(id);
+            user.setOauthEmail(email);
             user.setPassword("");
             user.setAvatarUrl(avatarUrl);
 

@@ -3,6 +3,7 @@ package com.myweb.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,23 +21,26 @@ public class DashboardController {
 
         private final UserRepository userRepository;
         private final com.myweb.repository.SolutionRepository solutionRepository;
-        private final com.myweb.repository.ContactMessageRepository contactMessageRepository;
-        private final com.myweb.repository.BlogPostRepository blogPostRepository;
+        private final com.myweb.repository.ContactRepository contactRepository;
+        private final com.myweb.repository.BlogRepository blogRepository;
         private final com.myweb.repository.AuditLogRepository auditLogRepository;
+        private final com.myweb.repository.BlockedIpHistoryRepository blockedIpHistoryRepository;
 
         private final JdbcTemplate jdbcTemplate;
 
         public DashboardController(UserRepository userRepository,
                         com.myweb.repository.SolutionRepository solutionRepository,
-                        com.myweb.repository.ContactMessageRepository contactMessageRepository,
-                        com.myweb.repository.BlogPostRepository blogPostRepository,
+                        com.myweb.repository.ContactRepository contactRepository,
+                        com.myweb.repository.BlogRepository blogRepository,
                         com.myweb.repository.AuditLogRepository auditLogRepository,
+                        com.myweb.repository.BlockedIpHistoryRepository blockedIpHistoryRepository,
                         JdbcTemplate jdbcTemplate) {
                 this.userRepository = userRepository;
                 this.solutionRepository = solutionRepository;
-                this.contactMessageRepository = contactMessageRepository;
-                this.blogPostRepository = blogPostRepository;
+                this.contactRepository = contactRepository;
+                this.blogRepository = blogRepository;
                 this.auditLogRepository = auditLogRepository;
+                this.blockedIpHistoryRepository = blockedIpHistoryRepository;
                 this.jdbcTemplate = jdbcTemplate;
         }
 
@@ -59,9 +63,8 @@ public class DashboardController {
                 // doesn't kill all charts. Using HashMap to tolerate potential null values.
                 java.util.Map<String, Object> charts = new java.util.HashMap<>();
                 try {
-                        long contactCount2 = contactMessageRepository.count();
-                        long unreadCount = contactMessageRepository
-                                        .countByStatus(com.myweb.entity.ContactMessage.Status.UNREAD);
+                        long contactCount2 = contactRepository.count();
+                        long unreadCount = contactRepository.countByIsReadFalse();
                         java.util.Map<String, Object> contactChart = new java.util.HashMap<>();
                         contactChart.put("total", contactCount2);
                         contactChart.put("unread", unreadCount);
@@ -71,8 +74,8 @@ public class DashboardController {
                         charts.put("contacts", java.util.Map.of("total", 0L, "unread", 0L, "read", 0L));
                 }
                 try {
-                        long blogTotal = blogPostRepository.count();
-                        long publishedCount = blogPostRepository.countByPublishedTrue();
+                        long blogTotal = blogRepository.count();
+                        long publishedCount = blogRepository.countByPublishedTrue();
                         java.util.Map<String, Object> blogChart = new java.util.HashMap<>();
                         blogChart.put("total", blogTotal);
                         blogChart.put("published", publishedCount);
@@ -83,15 +86,14 @@ public class DashboardController {
                 }
                 try {
                         long auditTotal = auditLogRepository.count();
-                        long dangerCount = auditLogRepository
-                                        .countBySeverity(com.myweb.entity.AuditLog.Severity.DANGER);
+                        long blockedCount = blockedIpHistoryRepository.count();
                         java.util.Map<String, Object> securityChart = new java.util.HashMap<>();
-                        securityChart.put("total", auditTotal);
-                        securityChart.put("danger", dangerCount);
-                        securityChart.put("safe", auditTotal - dangerCount);
+                        securityChart.put("total", auditTotal + blockedCount);
+                        securityChart.put("blocked", blockedCount);
+                        securityChart.put("safe", auditTotal); // Assuming audits without blocks are safe events
                         charts.put("security", securityChart);
                 } catch (Exception e) {
-                        charts.put("security", java.util.Map.of("total", 0L, "danger", 0L, "safe", 0L));
+                        charts.put("security", java.util.Map.of("total", 0L, "blocked", 0L, "safe", 0L));
                 }
 
                 // Recent audit logs (10 most recent) — wrapped in try-catch
@@ -107,7 +109,17 @@ public class DashboardController {
                 // Use HashMap (tolerates null values, unlike Map.of)
                 java.util.Map<String, Object> response = new java.util.HashMap<>();
                 response.put("userCount", userRepository.count());
-                response.put("contactCount", contactMessageRepository.count());
+                response.put("contactCount", contactRepository.count());
+                response.put("blockedIpCount", blockedIpHistoryRepository.count());
+
+                var latestBlockDb = blockedIpHistoryRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, 1))
+                                .getContent();
+                if (!latestBlockDb.isEmpty()) {
+                        response.put("latestBlockedIp", latestBlockDb.get(0).getIpAddress());
+                } else {
+                        response.put("latestBlockedIp", null);
+                }
+
                 response.put("tables", tables);
                 response.put("charts", charts);
                 response.put("recentLogs", recentLogs);
@@ -119,8 +131,8 @@ public class DashboardController {
                 return switch (tableName.toLowerCase()) {
                         case "users" -> "Bảng quản lý người dùng hệ thống";
                         case "solutions" -> "Giải pháp & Dịch vụ web cung cấp";
-                        case "contact_messages" -> "Phản hồi/Tin nhắn từ khách hàng";
-                        case "blog_posts" -> "Cơ sở dữ liệu tin tức & bài viết";
+                        case "contacts" -> "Phản hồi/Tin nhắn từ khách hàng";
+                        case "blogs" -> "Cơ sở dữ liệu tin tức & bài viết";
                         case "audit_logs" -> "Nhật ký truy cập và bảo mật";
                         case "security_events" -> "Các sự kiện giám sát an ninh (Security AI)";
                         case "login_attempts" -> "Ghi nhận tiến trình đăng nhập sai biệt";

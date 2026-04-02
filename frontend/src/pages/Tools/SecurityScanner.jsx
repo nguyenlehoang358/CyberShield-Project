@@ -77,7 +77,7 @@ export default function SecurityScanner() {
                         onClick={toggleLang}
                         style={{ background: 'none', border: '1px solid var(--eco-border)', padding: '0.4rem 0.8rem', borderRadius: '6px', color: 'var(--eco-text)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginRight: '1rem' }}
                     >
-                        <Globe size={16} /> {lang === 'vi' ? 'English' : 'Tiếng Việt'}
+                        <Globe size={16} /> {lang.toUpperCase()}
                     </button>
 
                     <button

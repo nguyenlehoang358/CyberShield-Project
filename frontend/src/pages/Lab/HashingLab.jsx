@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useLanguage } from '../../context/LanguageContext'
-
+import AIInput from '../../components/common/AIInput'
 /* ──────────────────────────────────────
    HASH ALGORITHMS
    ────────────────────────────────────── */
@@ -372,7 +372,7 @@ export default function HashingLab() {
                     <button
                         key={tab.id}
                         className={`lab-tab ${activeSection === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveSection(tab.id)}
+                        onClick={() => { setActiveSection(tab.id); window.scrollTo({ top: 0, behavior: 'instant' }); }}
                     >
                         {tab.label}
                     </button>
@@ -387,10 +387,12 @@ export default function HashingLab() {
                             <label className="lab-input-label">
                                 📝 {lang === 'vi' ? 'Nhập văn bản' : 'Input Text'}
                             </label>
-                            <textarea
+                            <AIInput
+                                as="textarea"
                                 className="lab-input lab-textarea"
                                 value={input}
                                 onChange={e => setInput(e.target.value)}
+                                labType="hashing"
                                 placeholder={lang === 'vi' ? 'Gõ bất kỳ thứ gì...' : 'Type anything...'}
                                 rows={2}
                             />
@@ -520,18 +522,20 @@ export default function HashingLab() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div className="lab-input-group">
                                 <label className="lab-input-label">📝 Input A</label>
-                                <input
+                                <AIInput
                                     className="lab-input"
                                     value={avalInput1}
                                     onChange={e => setAvalInput1(e.target.value)}
+                                    labType="hashing"
                                 />
                             </div>
                             <div className="lab-input-group">
                                 <label className="lab-input-label">📝 Input B</label>
-                                <input
+                                <AIInput
                                     className="lab-input"
                                     value={avalInput2}
                                     onChange={e => setAvalInput2(e.target.value)}
+                                    labType="hashing"
                                 />
                             </div>
                         </div>
@@ -661,13 +665,13 @@ export default function HashingLab() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
                             <div className="lab-input-group">
                                 <label className="lab-input-label">Input A</label>
-                                <input className="lab-input" value={collInput1} onChange={e => setCollInput1(e.target.value)}
-                                    placeholder={lang === 'vi' ? 'Nhập text A...' : 'Enter text A...'} />
+                                <AIInput className="lab-input" value={collInput1} onChange={e => setCollInput1(e.target.value)}
+                                    labType="hashing" placeholder={lang === 'vi' ? 'Nhập text A...' : 'Enter text A...'} />
                             </div>
                             <div className="lab-input-group">
                                 <label className="lab-input-label">Input B</label>
-                                <input className="lab-input" value={collInput2} onChange={e => setCollInput2(e.target.value)}
-                                    placeholder={lang === 'vi' ? 'Nhập text B khác...' : 'Enter different text B...'} />
+                                <AIInput className="lab-input" value={collInput2} onChange={e => setCollInput2(e.target.value)}
+                                    labType="hashing" placeholder={lang === 'vi' ? 'Nhập text B khác...' : 'Enter different text B...'} />
                             </div>
                         </div>
 

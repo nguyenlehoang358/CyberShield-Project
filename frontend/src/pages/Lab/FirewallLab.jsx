@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useLanguage } from '../../context/LanguageContext'
-
+import AIInput from '../../components/common/AIInput'
 /* ──────────────────────────────────────
    FIREWALL RULES ENGINE
    ────────────────────────────────────── */
@@ -329,7 +329,7 @@ export default function FirewallLab() {
                     { id: 'learn', label: lang === 'vi' ? '📖 Kiến thức' : '📖 Learn' },
                 ].map(tab => (
                     <button key={tab.id} className={`lab-tab ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}>
+                        onClick={() => { setActiveTab(tab.id); window.scrollTo({ top: 0, behavior: 'instant' }); }}>
                         {tab.label}
                     </button>
                 ))}
@@ -414,14 +414,16 @@ export default function FirewallLab() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.6rem' }}>
                             <div className="lab-input-group" style={{ margin: 0 }}>
                                 <label className="lab-input-label">Source IP</label>
-                                <input className="lab-input" value={manualPacket.srcIp}
+                                <AIInput className="lab-input" value={manualPacket.srcIp}
                                     onChange={e => setManualPacket(p => ({ ...p, srcIp: e.target.value }))}
+                                    labType="firewall"
                                     style={{ fontSize: '0.82rem' }} />
                             </div>
                             <div className="lab-input-group" style={{ margin: 0 }}>
                                 <label className="lab-input-label">Dest IP</label>
-                                <input className="lab-input" value={manualPacket.dstIp}
+                                <AIInput className="lab-input" value={manualPacket.dstIp}
                                     onChange={e => setManualPacket(p => ({ ...p, dstIp: e.target.value }))}
+                                    labType="firewall"
                                     style={{ fontSize: '0.82rem' }} />
                             </div>
                             <div className="lab-input-group" style={{ margin: 0 }}>
@@ -434,8 +436,9 @@ export default function FirewallLab() {
                             </div>
                             <div className="lab-input-group" style={{ margin: 0 }}>
                                 <label className="lab-input-label">Dest Port</label>
-                                <input className="lab-input" value={manualPacket.dstPort} type="number"
+                                <AIInput className="lab-input" value={manualPacket.dstPort}
                                     onChange={e => setManualPacket(p => ({ ...p, dstPort: e.target.value }))}
+                                    labType="firewall"
                                     style={{ fontSize: '0.82rem' }} />
                             </div>
                         </div>
@@ -630,20 +633,23 @@ export default function FirewallLab() {
                             </div>
                             <div className="lab-input-group" style={{ margin: 0 }}>
                                 <label className="lab-input-label">Src IP</label>
-                                <input className="lab-input" value={newRule.srcIp}
+                                <AIInput className="lab-input" value={newRule.srcIp}
                                     onChange={e => setNewRule(r => ({ ...r, srcIp: e.target.value }))}
+                                    labType="firewall"
                                     placeholder="* or 192.168.1.*" style={{ fontSize: '0.82rem' }} />
                             </div>
                             <div className="lab-input-group" style={{ margin: 0 }}>
                                 <label className="lab-input-label">Dst IP</label>
-                                <input className="lab-input" value={newRule.dstIp}
+                                <AIInput className="lab-input" value={newRule.dstIp}
                                     onChange={e => setNewRule(r => ({ ...r, dstIp: e.target.value }))}
+                                    labType="firewall"
                                     placeholder="*" style={{ fontSize: '0.82rem' }} />
                             </div>
                             <div className="lab-input-group" style={{ margin: 0 }}>
                                 <label className="lab-input-label">Dst Port</label>
-                                <input className="lab-input" value={newRule.dstPort} type="text"
+                                <AIInput className="lab-input" value={newRule.dstPort}
                                     onChange={e => setNewRule(r => ({ ...r, dstPort: e.target.value }))}
+                                    labType="firewall"
                                     placeholder="80, 443, *" style={{ fontSize: '0.82rem' }} />
                             </div>
                             <div className="lab-input-group" style={{ margin: 0 }}>

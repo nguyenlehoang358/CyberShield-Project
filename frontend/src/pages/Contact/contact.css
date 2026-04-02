@@ -67,6 +67,29 @@
       color: white;
       padding: 6rem 0 4rem;
   }
+
+  .hero-title {
+      font-size: 3rem;
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: white; 
+  }
+  
+  @media (min-width: 768px) {
+      .hero-title {
+          font-size: 4.5rem;
+      }
+  }
+
+  .hero-subtitle {
+      font-size: 1.125rem;
+      color: rgba(255, 255, 255, 0.8);
+      max-width: 42rem;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 2.5rem;
+  }
   
   .contact-bg-glow {
       position: absolute;
@@ -266,3 +289,29 @@
   .text-xl { font-size: 1.25rem; }
   .text-sm { font-size: 0.875rem; }
   .text-border-light { border-color: rgba(0,0,0,0.1); }
+
+  /* Dark Mode Overrides */
+  [data-theme="dark"] .contact-card,
+  [data-theme="dark"] .contact-form-wrapper,
+  [data-theme="dark"] .faq-card {
+      background-color: var(--bg-card);
+      border-color: var(--border);
+  }
+
+  [data-theme="dark"] .faq-card {
+      background: var(--bg-card);
+  }
+
+  [data-theme="dark"] .form-input,
+  [data-theme="dark"] .form-select,
+  [data-theme="dark"] .form-textarea {
+      background-color: var(--bg-primary);
+      border-color: var(--border);
+      color: var(--text-primary);
+  }
+
+  [data-theme="dark"] .form-input:focus,
+  [data-theme="dark"] .form-select:focus,
+  [data-theme="dark"] .form-textarea:focus {
+      background-color: var(--bg-card-hover);
+  }

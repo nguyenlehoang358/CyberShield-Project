@@ -31,13 +31,15 @@ public class SecurityEventService {
     private static final long STATS_CACHE_TTL_MS = 30_000; // 30 seconds
 
     private final SecurityEventRepository repository;
+    private final NotificationService notificationService;
 
     // Simple in-memory cache for dashboard stats
     private volatile Map<String, Object> cachedStats;
     private volatile long cacheTimestamp;
 
-    public SecurityEventService(SecurityEventRepository repository) {
+    public SecurityEventService(SecurityEventRepository repository, NotificationService notificationService) {
         this.repository = repository;
+        this.notificationService = notificationService;
     }
 
     // ═══════════════════════════════════════════════
@@ -49,6 +51,7 @@ public class SecurityEventService {
         SecurityEvent event = SecurityEvent.bruteForce(ip, details);
         repository.save(event);
         log.warn("SECURITY EVENT [BRUTE_FORCE] IP={} - {}", ip, details);
+        notificationService.sendSecurityAlert(event);
     }
 
     @Async
@@ -56,12 +59,14 @@ public class SecurityEventService {
         SecurityEvent event = SecurityEvent.rateLimit(ip, details);
         repository.save(event);
         log.warn("SECURITY EVENT [RATE_LIMIT] IP={} - {}", ip, details);
+        notificationService.sendSecurityAlert(event);
     }
 
     @Async
     public void logAuthFailure(String ip, String username, String reason) {
         SecurityEvent event = SecurityEvent.authFailure(ip, username, reason);
         repository.save(event);
+        notificationService.sendSecurityAlert(event);
     }
 
     @Async
@@ -69,6 +74,7 @@ public class SecurityEventService {
         SecurityEvent event = SecurityEvent.ipBlocked(ip, reason);
         repository.save(event);
         log.warn("SECURITY EVENT [IP_BLOCKED] IP={} - {}", ip, reason);
+        notificationService.sendSecurityAlert(event);
     }
 
     @Async
@@ -76,6 +82,7 @@ public class SecurityEventService {
         SecurityEvent event = SecurityEvent.suspiciousActivity(ip, description, severity);
         repository.save(event);
         log.warn("SECURITY EVENT [SUSPICIOUS] IP={} severity={} - {}", ip, severity, description);
+        notificationService.sendSecurityAlert(event);
     }
 
     // ═══════════════════════════════════════════════
@@ -269,5 +276,28 @@ public class SecurityEventService {
                         .append(" | ").append(e.getDescription()).append("\n"));
 
         return sb.toString();
+    }
+
+    /**
+     * Auto resolve minor events (LOW, SAFE) as configured by AI settings.
+     */
+    public void autoResolveMinorEvents() {
+        List<SecurityEvent> events = repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .filter(e -> !Boolean.TRUE.equals(e.getResolved()) && e.getSeverity() == Severity.LOW)
+                .collect(Collectors.toList());
+
+        if (!events.isEmpty()) {
+            for (SecurityEvent event : events) {
+                event.setResolved(true);
+                event.setResolvedAt(Instant.now());
+                event.setResolutionNotes("Auto-resolved by CyberShield AI (Minor threshold matched).");
+            }
+            repository.saveAll(events);
+            log.info("🤖 AI Advisor auto-resolved {} minor security events.", events.size());
+
+            // Invalidate cache
+            cachedStats = null;
+        }
     }
 }
