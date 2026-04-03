@@ -401,10 +401,15 @@ body:has(.lab-layout) .navbar {
 }
 
 body:has(.lab-layout) .navbar .logo {
-    background: linear-gradient(135deg, var(--lab-blue), var(--lab-purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background: linear-gradient(135deg, var(--lab-blue, #58a6ff), var(--lab-purple, #bc8cff)) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: transparent !important;
+    display: inline-block;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 1001;
 }
 
 body:has(.lab-layout) .nav-links a,

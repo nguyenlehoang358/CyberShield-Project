@@ -46,7 +46,7 @@ const JWTLab = lazy(() => import('./pages/Lab/JWTLab'))
 const BlogList = lazy(() => import('./pages/Blog/BlogList'))
 
 // Hãy dùng cách lấy IP động:
-const currentIP = window.location.hostname; 
+const currentIP = window.location.hostname;
 const baseURL = `https://${currentIP}:8443/api`;
 
 const axiosClient = axios.create({
@@ -84,7 +84,7 @@ function ModeratorRoute() {
 function Layout() {
     const location = useLocation()
     const isLab = location.pathname.startsWith('/lab')
-    
+
     return (
         <div className="min-h-screen flex flex-col">
             <Navbar />
@@ -96,7 +96,7 @@ function Layout() {
                 </ErrorBoundary>
             </main>
             <Footer />
-            <AIChatWidget key={`ai-chat-${isLab ? 'lab' : 'web'}`} />
+            {/* <AIChatWidget key={`ai-chat-${isLab ? 'lab' : 'web'}`} /> */}
             <SupportChatWidget key={`support-chat-${isLab ? 'lab' : 'web'}`} />
         </div>
     )

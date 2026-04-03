@@ -45,21 +45,21 @@ export default function LabMentorChat({ labId, labContext }) {
                 labContext: labContext || '',
                 labId: labId || ''
             })
+
+            // Đơn giản hóa bộ lọc kết quả từ BE
+            const aiReply = typeof res.data === 'string' ? res.data : (res.data.reply || JSON.stringify(res.data));
+
             setMessages(prev => [...prev, {
                 role: 'mentor',
-                text: res.data.reply,
-                ts: Date.now(),
-                model: res.data.model
+                text: aiReply,
+                ts: Date.now()
             }])
 
-            // 🚀 AI Copilot Action: Auto-fill form
-            if (res.data.action === 'FILL_FORM' && res.data.payload) {
-                setLabInputData(res.data.payload);
-            }
+            // Đã xóa bỏ logic FILL_FORM (Auto-fill) để ổn định hệ thống
         } catch (err) {
             const errMsg = err?.response?.status === 429
-                ? (lang === 'vi' ? '⏳ Hệ thống Mentor đang quá tải (Rate Limit). Vui lòng đợi vài giây rồi thử lại.' : '⏳ Mentor system is overloaded (Rate Limit). Please wait a few seconds.')
-                : (lang === 'vi' ? '❌ Không thể kết nối Mentor AI. Thử lại sau.' : '❌ Failed to reach Mentor AI. Try again later.')
+                ? (lang === 'vi' ? '⏳ Hệ thống Mentor đang quá tải. Vui lòng đợi vài giây.' : '⏳ Mentor system is overloaded. Please wait.')
+                : (lang === 'vi' ? '❌ Lỗi kết nối AI. Thử lại sau.' : '❌ AI connection failed. Try again.')
             setMessages(prev => [...prev, { role: 'mentor', text: errMsg, ts: Date.now(), error: true }])
         } finally {
             setLoading(false)

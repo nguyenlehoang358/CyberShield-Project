@@ -6,6 +6,7 @@ C:\Users\Asus-PC\myweb\src\main\java\com\myweb\controller\TestDbController.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\controller\SolutionController.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\security\CustomUserDetailsService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\ForgotPasswordRequest.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\OllamaLabMentorService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\DocumentService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\AiSecurityService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\SolutionSeeder.java
@@ -57,6 +58,7 @@ C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\SystemSetting.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\LabChatRequest.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\BlockedIpHistory.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\ApiErrorResponse.java
+C:\Users\Asus-PC\myweb\src\main\java\com\myweb\controller\FrontendController.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\RAGService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\ResetPasswordRequest.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\dto\LoginRequest.java
@@ -77,7 +79,6 @@ C:\Users\Asus-PC\myweb\src\main\java\com\myweb\repository\RoleRepository.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\security\xss\StringSanitizerDeserializer.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\NotificationService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\repository\ContactRepository.java
-C:\Users\Asus-PC\myweb\src\main\java\com\myweb\service\GeminiLabMentorService.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\config\SecurityConfig.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\controller\AIChatController.java
 C:\Users\Asus-PC\myweb\src\main\java\com\myweb\entity\AuditLog.java

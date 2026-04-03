@@ -77,7 +77,7 @@ public class SecurityConfig {
                                                                                 "font-src 'self' data: https://fonts.gstatic.com; "
                                                                                 +
                                                                                 "img-src 'self' data: blob: https:; " +
-                                                                                "connect-src 'self' http://localhost:5173 https://accounts.google.com https://github.com https://facebook.com; "
+                                                                                "connect-src 'self' http://localhost:5173 https://generativelanguage.googleapis.com https://accounts.google.com https://github.com https://facebook.com; "
                                                                                 +
                                                                                 "frame-ancestors 'none'; " +
                                                                                 "form-action 'self' https://accounts.google.com https://github.com https://facebook.com; "
@@ -88,7 +88,8 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/", "/index.html", "/login.html", "/dashboard.html",
                                                                 "/css/**", "/js/**", "/images/**", "/oauth2/**",
-                                                                "/login/**", "/error")
+                                                                "/login/**", "/error", "/static/**", "/assets/**",
+                                                                "/*.js", "/*.css", "/*.png", "/*.jpg")
                                                 .permitAll()
                                                 .requestMatchers("/ws/**", "/ws").permitAll()
                                                 .requestMatchers("/actuator/**").hasRole("ADMIN")
@@ -97,7 +98,9 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers("/api/auth/**").permitAll()
                                                 .requestMatchers("/api/public/**").permitAll()
-                                                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/contact").permitAll()
+                                                .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                                                "/api/contact")
+                                                .permitAll()
                                                 .requestMatchers("/api/ai/chat", "/api/ai/status", "/api/ai/health")
                                                 .permitAll()
                                                 .requestMatchers(org.springframework.http.HttpMethod.GET,

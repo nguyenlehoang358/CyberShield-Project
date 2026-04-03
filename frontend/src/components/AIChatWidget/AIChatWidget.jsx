@@ -129,7 +129,8 @@ export default function AIChatWidget() {
     const t = translations[language] || translations.vi
 
     const currentIP = window.location.hostname
-    const apiBase = (currentIP === 'localhost' || currentIP === '127.0.0.1') ? '' : `https://${currentIP}:8443`
+    // Luôn trỏ về cổng 8443 của backend
+    const apiBase = `https://${currentIP}:8443`
 
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState([
